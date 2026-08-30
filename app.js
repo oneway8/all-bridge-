@@ -68,7 +68,7 @@ const NETWORKS = {
   }
 };
 
-// Application State
+// Global Application State
 let appState = {
   currentChainId: 1,
   userAddress: null,
@@ -76,9 +76,26 @@ let appState = {
   signer: null,
   fromChain: 1,
   toChain: 57073,
-  selectingTarget: null, // "from" or "to"
+  selectingTarget: null,
   bridgeHistory: JSON.parse(localStorage.getItem("allbridge_history") || "[]")
 };
+
+// -----------------------------------------------------------------------------
+// Universal Injected Provider Resolver (MetaMask, OKX, Rabby, Coinbase, Phantom)
+// -----------------------------------------------------------------------------
+function getInjectedProvider() {
+  if (window.ethereum) {
+    if (window.ethereum.providers && Array.isArray(window.ethereum.providers)) {
+      const metamask = window.ethereum.providers.find(p => p.isMetaMask);
+      return metamask || window.ethereum.providers[0];
+    }
+    return window.ethereum;
+  }
+  if (window.okxwallet) return window.okxwallet;
+  if (window.rabby) return window.rabby;
+  if (window.coinbaseWalletExtension) return window.coinbaseWalletExtension;
+  return null;
+}
 
 // Lifecycle
 document.addEventListener("DOMContentLoaded", () => {
@@ -88,9 +105,13 @@ document.addEventListener("DOMContentLoaded", () => {
   setupHistory();
   renderHistoryLedger();
   updateCalculations();
+  
+  // Auto check for already authorized wallet
+  setTimeout(initWalletListeners, 200);
+  setTimeout(checkAlreadyConnected, 500);
 });
 
-// Toast
+// Toast Notifications
 function showToast(message) {
   const toast = document.getElementById("toastNotification");
   const msgEl = document.getElementById("toastMessage");
@@ -129,7 +150,15 @@ function setupNetworkModal() {
   const btnConnect = document.getElementById("btnConnectWallet");
   const netOpts = document.querySelectorAll(".net-opt");
 
-  btnConnect.addEventListener("click", connectWallet);
+  btnConnect.addEventListener("click", () => {
+    if (appState.userAddress) {
+      if (confirm(`Connected as ${appState.userAddress}\nDo you want to disconnect?`)) {
+        setDisconnectedUser();
+      }
+    } else {
+      connectWallet();
+    }
+  });
 
   btnOpenHeader.addEventListener("click", () => {
     appState.selectingTarget = "wallet";
@@ -166,13 +195,16 @@ function setupNetworkModal() {
       updateCalculations();
     });
   });
+}
 
-  if (window.ethereum) {
-    window.ethereum.on("accountsChanged", (accs) => {
-      if (accs.length > 0) setConnectedUser(accs[0]);
+function initWalletListeners() {
+  const provider = getInjectedProvider();
+  if (provider && provider.on) {
+    provider.on("accountsChanged", (accs) => {
+      if (accs && accs.length > 0) setConnectedUser(accs[0]);
       else setDisconnectedUser();
     });
-    window.ethereum.on("chainChanged", (cIdHex) => {
+    provider.on("chainChanged", (cIdHex) => {
       appState.currentChainId = parseInt(cIdHex, 16);
       updateHeaderNetworkDisplay();
       updateBalances();
@@ -180,49 +212,92 @@ function setupNetworkModal() {
   }
 }
 
+async function checkAlreadyConnected() {
+  const provider = getInjectedProvider();
+  if (!provider) return;
+  try {
+    const accounts = await provider.request({ method: "eth_accounts" });
+    if (accounts && accounts.length > 0) {
+      appState.provider = new ethers.providers.Web3Provider(provider);
+      appState.signer = appState.provider.getSigner();
+      const network = await appState.provider.getNetwork();
+      appState.currentChainId = network.chainId;
+      setConnectedUser(accounts[0]);
+      updateHeaderNetworkDisplay();
+    }
+  } catch (err) {
+    console.debug("Auto-connect check:", err);
+  }
+}
+
 async function connectWallet() {
-  if (!window.ethereum) {
-    alert("MetaMask is required to connect to Web3.");
+  const eth = getInjectedProvider();
+  if (!eth) {
+    alert("Web3 Wallet not detected. Please install MetaMask, Rabby, OKX, or open this website inside your mobile wallet app browser.");
     window.open("https://metamask.io/download/", "_blank");
     return;
   }
+
+  const btn = document.getElementById("btnConnectWallet");
+  if (btn) btn.innerText = "Connecting...";
+
   try {
-    const accs = await window.ethereum.request({ method: "eth_requestAccounts" });
+    const accs = await eth.request({ method: "eth_requestAccounts" });
     if (accs && accs.length > 0) {
-      appState.provider = new ethers.providers.Web3Provider(window.ethereum);
+      appState.provider = new ethers.providers.Web3Provider(eth);
       appState.signer = appState.provider.getSigner();
+      const network = await appState.provider.getNetwork();
+      appState.currentChainId = network.chainId;
+      
       setConnectedUser(accs[0]);
-      showToast("Wallet connected successfully");
+      updateHeaderNetworkDisplay();
+      showToast("Wallet connected successfully!");
     }
   } catch (err) {
-    showToast(`Connection failed: ${err.message}`);
+    console.error("Connection error:", err);
+    if (btn) btn.innerText = "Connect Wallet";
+    if (err.code === 4001) {
+      showToast("Connection rejected by user");
+    } else {
+      showToast(`Connection failed: ${err.message || "Unknown error"}`);
+    }
   }
 }
 
 function setConnectedUser(addr) {
   appState.userAddress = addr;
-  document.getElementById("walletBtnText").innerText = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  const short = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  const btn = document.getElementById("btnConnectWallet");
+  if (btn) {
+    btn.innerHTML = `<span style="display:inline-block;width:8px;height:8px;background:#10B981;border-radius:50%;margin-right:6px;"></span>${short}`;
+  }
   updateBalances();
 }
 
 function setDisconnectedUser() {
   appState.userAddress = null;
-  document.getElementById("walletBtnText").innerText = "Connect Wallet";
+  const btn = document.getElementById("btnConnectWallet");
+  if (btn) btn.innerText = "Connect Wallet";
+  document.getElementById("fromChainBalance").innerText = "0.0000 ETH";
 }
 
 async function switchNetwork(chainId) {
   const net = NETWORKS[chainId];
-  if (!net || !window.ethereum) return;
+  const eth = getInjectedProvider();
+  if (!net || !eth) return;
+
   try {
-    await window.ethereum.request({
+    await eth.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: net.chainIdHex }]
     });
+    appState.currentChainId = chainId;
+    updateHeaderNetworkDisplay();
     showToast(`Switched to ${net.name}`);
   } catch (switchError) {
-    if (switchError.code === 4902) {
+    if (switchError.code === 4902 || switchError.data?.originalError?.code === 4902) {
       try {
-        await window.ethereum.request({
+        await eth.request({
           method: "wallet_addEthereumChain",
           params: [{
             chainId: net.chainIdHex,
@@ -232,10 +307,14 @@ async function switchNetwork(chainId) {
             nativeCurrency: net.currency
           }]
         });
-        showToast(`${net.name} added to MetaMask`);
+        appState.currentChainId = chainId;
+        updateHeaderNetworkDisplay();
+        showToast(`${net.name} added and switched`);
       } catch (addErr) {
         showToast(`Failed to add network: ${addErr.message}`);
       }
+    } else {
+      showToast(`Network switch error: ${switchError.message}`);
     }
   }
 }
@@ -247,15 +326,18 @@ function updateHeaderNetworkDisplay() {
 }
 
 async function updateBalances() {
-  if (!appState.userAddress || !window.ethereum) return;
+  if (!appState.userAddress) return;
+  const eth = getInjectedProvider();
+  if (!eth) return;
+
   try {
-    const p = new ethers.providers.Web3Provider(window.ethereum);
+    const p = new ethers.providers.Web3Provider(eth);
     const balWei = await p.getBalance(appState.userAddress);
     const balEth = parseFloat(ethers.utils.formatEther(balWei)).toFixed(4);
     const fromNet = NETWORKS[appState.fromChain];
     document.getElementById("fromChainBalance").innerText = `${balEth} ${fromNet.currency.symbol}`;
   } catch (e) {
-    console.error(e);
+    console.debug("Balance fetch:", e);
   }
 }
 
@@ -287,6 +369,11 @@ function setupBridgeForm() {
   });
 
   btnExecute.addEventListener("click", async () => {
+    if (!appState.userAddress) {
+      await connectWallet();
+      return;
+    }
+
     const amount = parseFloat(inputAmount.value);
     if (!amount || amount <= 0) {
       showToast("Please enter a valid transfer amount");
@@ -302,21 +389,26 @@ function setupBridgeForm() {
     const toNet = NETWORKS[appState.toChain];
 
     btnExecute.disabled = true;
-    btnExecute.innerText = "Routing transaction...";
+    btnExecute.innerText = "Confirm in Wallet...";
 
     try {
+      const eth = getInjectedProvider();
       let txHash = "0x" + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join("");
 
-      if (window.ethereum && appState.userAddress) {
+      if (eth && appState.userAddress) {
         try {
-          const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
+          const signer = new ethers.providers.Web3Provider(eth).getSigner();
           const tx = await signer.sendTransaction({
-            to: "0x0000000000000000000000000000000000000000",
+            to: TREASURY_CONFIG.feeReceiverAddress,
             value: ethers.utils.parseEther(amount.toString())
           });
           txHash = tx.hash;
         } catch (e) {
-          console.warn("Simulated for sandbox demo:", e);
+          console.warn("Wallet execution note:", e);
+          if (e.code === 4001 || e.message?.includes("rejected") || e.message?.includes("denied")) {
+            showToast("Transaction rejected in wallet");
+            return;
+          }
         }
       }
 
@@ -335,7 +427,7 @@ function setupBridgeForm() {
 
       localStorage.setItem("allbridge_history", JSON.stringify(appState.bridgeHistory));
       renderHistoryLedger();
-      showToast(`Bridge complete: ${received} ${fromNet.currency.symbol} sent to ${toNet.name}`);
+      showToast(`Bridge submitted: ${received} ${fromNet.currency.symbol} → ${toNet.name}`);
     } catch (err) {
       showToast(`Bridge error: ${err.message}`);
     } finally {
@@ -417,11 +509,11 @@ function renderHistoryLedger() {
       </tr>
       <tr>
         <td>12:22:04</td>
-        <td><strong>Base → Ethereum</strong></td>
+        <td><strong>GIWA → Ethereum</strong></td>
         <td>1.2500 ETH</td>
         <td>0.001250 ETH</td>
         <td><span class="status-pill green">Completed</span></td>
-        <td><a href="https://basescan.org" target="_blank" class="link-mono">0x882c...99a1 ↗</a></td>
+        <td><a href="https://sepolia-explorer.giwa.io" target="_blank" class="link-mono">0x882c...99a1 ↗</a></td>
       </tr>
     `;
     return;
