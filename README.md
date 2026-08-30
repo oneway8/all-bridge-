@@ -59,7 +59,7 @@ git remote add origin https://github.com/your-username/trinity-bridge.git
 git push -u origin main
 ```
 2. Log into [Vercel.com](https://vercel.com) → Click **[Add New Project]** → **[Import]**.
-3. Your live global HTTPS domain (`https://trinity-bridge.vercel.app`) will be ready in 10 seconds!
+3. Live Global Production Domain: **[https://all-bridge-hub.vercel.app](https://all-bridge-hub.vercel.app)**
 
 ---
 
