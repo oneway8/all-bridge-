@@ -827,3 +827,23 @@ body {
   .metrics-row { grid-template-columns: 1fr; }
   .footer-container { flex-direction: column; gap: 12px; text-align: center; }
 }
+
+/* Official Chain Images */
+.chain-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.giwa-img {
+  background: rgba(16, 185, 129, 0.15);
+  padding: 3px;
+  border-radius: 8px;
+}
+
+.table-chain-cell img, .net-opt img {
+  border-radius: 50%;
+  object-fit: cover;
+}
