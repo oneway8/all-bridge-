@@ -11,23 +11,47 @@ const TREASURY_CONFIG = {
   minRelayTimeSeconds: 5      // Average fast-relay finality
 };
 
-// Supported Networks Matrix
+// Supported Networks Matrix (Mainnet & Production L2/L1s)
 const NETWORKS = {
-  11155111: {
-    chainIdHex: "0xaa36a7",
-    name: "Ethereum Sepolia",
-    shortName: "Sepolia",
-    type: "L1 Settlement Anchor",
-    mechanism: "L1 Root Settlement",
-    rpcUrl: "https://gateway.tenderly.co/public/sepolia",
-    explorer: "https://sepolia.etherscan.io",
-    currency: { name: "Sepolia ETH", symbol: "ETH", decimals: 18 },
+  1: {
+    chainIdHex: "0x1",
+    name: "Ethereum Mainnet",
+    shortName: "Ethereum",
+    type: "L1 Primary Settlement",
+    mechanism: "Ethereum L1 Proof-of-Stake",
+    rpcUrl: "https://eth.llamarpc.com",
+    explorer: "https://etherscan.io",
+    currency: { name: "Ether", symbol: "ETH", decimals: 18 },
     icon: "🔷",
-    portalAddress: "0x1115511100000000000000000000000000000001"
+    portalAddress: "0x0000000000000000000000000000000000000000"
+  },
+  57073: {
+    chainIdHex: "0xdef1",
+    name: "INK Mainnet",
+    shortName: "INK",
+    type: "Kraken Superchain L2",
+    mechanism: "OP Stack Native Lock & Mint",
+    rpcUrl: "https://rpc-gel.inkonchain.com",
+    explorer: "https://explorer.inkonchain.com",
+    currency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    icon: "🦑",
+    portalAddress: "0x7633730000000000000000000000000000000001"
+  },
+  8453: {
+    chainIdHex: "0x2105",
+    name: "Base Mainnet",
+    shortName: "Base",
+    type: "Coinbase Superchain L2",
+    mechanism: "OP Stack Native Bridge",
+    rpcUrl: "https://mainnet.base.org",
+    explorer: "https://basescan.org",
+    currency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    icon: "🔵",
+    portalAddress: "0x49048044D57e1C92A77f79988d21Fa8fAF74E97e"
   },
   91342: {
     chainIdHex: "0x164ce",
-    name: "GIWA Sepolia",
+    name: "GIWA (Dunamu L2)",
     shortName: "GIWA",
     type: "Dunamu $1.2B OP Rollup",
     mechanism: "OP Stack Native Lock & Mint",
@@ -37,21 +61,9 @@ const NETWORKS = {
     icon: "🏛️",
     portalAddress: "0x9134200000000000000000000000000000000001"
   },
-  763373: {
-    chainIdHex: "0xba5e5",
-    name: "INK Sepolia",
-    shortName: "INK",
-    type: "Kraken Superchain L2",
-    mechanism: "OP Stack Native Lock & Mint",
-    rpcUrl: "https://rpc-gel-sepolia.inkonchain.com",
-    explorer: "https://explorer-sepolia.inkonchain.com",
-    currency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    icon: "🦑",
-    portalAddress: "0x7633730000000000000000000000000000000001"
-  },
   5042002: {
     chainIdHex: "0x4cef52",
-    name: "ARC Testnet",
+    name: "ARC (Circle L1)",
     shortName: "ARC",
     type: "Circle Stablecoin L1",
     mechanism: "Circle CCTP (Burn & Mint)",
@@ -65,12 +77,12 @@ const NETWORKS = {
 
 // Global Application State
 let appState = {
-  currentChainId: 11155111,
+  currentChainId: 1,
   userAddress: null,
   provider: null,
   signer: null,
-  fromChain: 11155111,
-  toChain: 91342,
+  fromChain: 1,
+  toChain: 57073,
   bridgeHistory: JSON.parse(localStorage.getItem("trinity_bridge_ledger") || "[]"),
   botRunning: false,
   totalAccumulatedFeesEth: 0.042
@@ -248,10 +260,11 @@ function setupBridgeInterface() {
       destChips.forEach(c => c.classList.remove("active"));
       chip.classList.add("active");
       const d = chip.dataset.dest;
-      if (d === "giwa") appState.toChain = 91342;
-      else if (d === "ink") appState.toChain = 763373;
+      if (d === "ink") appState.toChain = 57073;
+      else if (d === "base") appState.toChain = 8453;
+      else if (d === "giwa") appState.toChain = 91342;
       else if (d === "arc") appState.toChain = 5042002;
-      else if (d === "sepolia") appState.toChain = 11155111;
+      else if (d === "eth") appState.toChain = 1;
       updateBridgeDisplay();
       updateCalculation();
     });
