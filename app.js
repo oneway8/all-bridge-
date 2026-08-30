@@ -14,7 +14,7 @@ const CHAIN_ICONS = {
   ink: `<img src="assets/ink.png" alt="INK" width="28" height="28" class="chain-img">`,
   base: `<img src="assets/base.png" alt="Base" width="28" height="28" class="chain-img">`,
   giwa: `<img src="assets/giwa.svg" alt="GIWA" width="28" height="28" class="chain-img giwa-img">`,
-  arc: `<img src="assets/usdc.png" alt="ARC" width="28" height="28" class="chain-img">`
+  arc: `<img src="assets/arc.svg" alt="ARC" width="28" height="28" class="chain-img arc-img">`
 };
 
 // Supported Networks Matrix

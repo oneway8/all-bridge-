@@ -847,3 +847,9 @@ body {
   border-radius: 50%;
   object-fit: cover;
 }
+
+.arc-img {
+  background: rgba(39, 117, 202, 0.15);
+  padding: 3px;
+  border-radius: 8px;
+}
