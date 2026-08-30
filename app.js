@@ -149,7 +149,33 @@ function setupWalletConnectModal() {
   const btnClose = document.getElementById("btnCloseWcModal");
   const btnConnect = document.getElementById("btnConnectWallet");
   const btnCopy = document.getElementById("btnCopyWcUri");
-  const btnInjected = document.getElementById("btnOpenInjected");
+  
+  const tabExt = document.getElementById("tabWcExtension");
+  const tabQr = document.getElementById("tabWcQr");
+  const viewExt = document.getElementById("viewWcExtension");
+  const viewQr = document.getElementById("viewWcQr");
+
+  const btnMetaMask = document.getElementById("btnConnectMetaMask");
+  const btnCoinbase = document.getElementById("btnConnectCoinbase");
+  const btnOKX = document.getElementById("btnConnectOKX");
+
+  // Tab switching
+  if (tabExt && tabQr) {
+    tabExt.addEventListener("click", () => {
+      tabExt.classList.add("active");
+      tabQr.classList.remove("active");
+      viewExt.classList.add("active");
+      viewQr.classList.remove("active");
+    });
+
+    tabQr.addEventListener("click", () => {
+      tabQr.classList.add("active");
+      tabExt.classList.remove("active");
+      viewQr.classList.add("active");
+      viewExt.classList.remove("active");
+      renderWalletConnectQr();
+    });
+  }
 
   btnConnect.addEventListener("click", () => {
     if (appState.userAddress) {
@@ -185,8 +211,23 @@ function setupWalletConnectModal() {
     });
   }
 
-  if (btnInjected) {
-    btnInjected.addEventListener("click", async () => {
+  // 1-Click Connectors inside Modal
+  if (btnMetaMask) {
+    btnMetaMask.addEventListener("click", async () => {
+      wcModal.classList.add("hidden");
+      await connectBrowserWallet();
+    });
+  }
+
+  if (btnCoinbase) {
+    btnCoinbase.addEventListener("click", async () => {
+      wcModal.classList.add("hidden");
+      await connectBrowserWallet();
+    });
+  }
+
+  if (btnOKX) {
+    btnOKX.addEventListener("click", async () => {
       wcModal.classList.add("hidden");
       await connectBrowserWallet();
     });
@@ -195,15 +236,19 @@ function setupWalletConnectModal() {
 
 function openWalletConnectModal() {
   const wcModal = document.getElementById("walletConnectModal");
-  const qrBox = document.getElementById("wcQrBox");
-  if (!wcModal || !qrBox) return;
+  if (!wcModal) return;
+  renderWalletConnectQr();
+  wcModal.classList.remove("hidden");
+}
 
-  // Generate standard WalletConnect pairing session URI
+function renderWalletConnectQr() {
+  const qrBox = document.getElementById("wcQrBox");
+  if (!qrBox) return;
+
   const topic = Array.from({length: 32}, () => Math.floor(Math.random()*16).toString(16)).join("");
   const key = Array.from({length: 32}, () => Math.floor(Math.random()*16).toString(16)).join("");
   appState.currentWcUri = `wc:${topic}@2?relay-protocol=irn&symKey=${key}`;
 
-  // Render QR Code
   qrBox.innerHTML = "";
   if (window.QRCode) {
     new QRCode(qrBox, {
@@ -215,19 +260,30 @@ function openWalletConnectModal() {
       correctLevel: QRCode.CorrectLevel.M
     });
   }
-
-  wcModal.classList.remove("hidden");
 }
 
 async function connectBrowserWallet() {
   const eth = getInjectedProvider();
   if (!eth) {
-    alert("No browser extension wallet found. Please scan the WalletConnect QR code with your mobile wallet app!");
+    alert("MetaMask extension not detected in this browser.\nPlease install MetaMask or scan the Mobile QR code with your phone wallet app!");
+    window.open("https://metamask.io/download/", "_blank");
     return;
   }
 
+  const btn = document.getElementById("btnConnectWallet");
+  if (btn) btn.innerHTML = `<span>Connecting...</span>`;
+
+  // Auto-reset timeout safety (never hang)
+  const timer = setTimeout(() => {
+    if (!appState.userAddress && btn) {
+      setDisconnectedUser();
+    }
+  }, 12000);
+
   try {
     const accs = await eth.request({ method: "eth_requestAccounts" });
+    clearTimeout(timer);
+
     if (accs && accs.length > 0) {
       appState.provider = new ethers.providers.Web3Provider(eth);
       appState.signer = appState.provider.getSigner();
@@ -236,13 +292,22 @@ async function connectBrowserWallet() {
       
       setConnectedUser(accs[0]);
       updateHeaderNetworkDisplay();
-      showToast("WalletConnect session active");
+      showToast("Wallet connected successfully!");
+    } else {
+      setDisconnectedUser();
     }
   } catch (err) {
-    if (err.code === 4001) {
-      showToast("Connection rejected");
+    clearTimeout(timer);
+    setDisconnectedUser();
+    console.error("Connection error:", err);
+
+    if (err.code === -32002) {
+      alert("A connection request is already waiting in MetaMask!\n\nPlease click on the MetaMask fox icon in your browser toolbar to approve.");
+      showToast("Please approve request in MetaMask extension");
+    } else if (err.code === 4001) {
+      showToast("Connection cancelled by user");
     } else {
-      showToast(`Connection failed: ${err.message}`);
+      showToast(`Connection failed: ${err.message || "Unknown error"}`);
     }
   }
 }
