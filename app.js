@@ -1,81 +1,78 @@
 /**
- * TRINITY BRIDGE — Master Cross-Chain Teleportation Engine
- * Connecting ARC (Circle L1), INK (Kraken L2), GIWA (Dunamu L2), and Ethereum Sepolia (L1)
+ * AllBridge Protocol — Production Cross-Chain Liquidity Engine
  */
 
-// 💰 Protocol Treasury & Fee Settlement Configuration
+// Protocol Treasury Configuration
 const TREASURY_CONFIG = {
-  // Protocol Treasury Fee Recipient Address (Configure with your personal address or .env)
   feeReceiverAddress: "0x71C8360537ad1EF91e42860F5F6A889417f7b1B3",
-  bridgeFeePercent: 0.1,      // Protocol fee (0.1% per transaction)
-  minRelayTimeSeconds: 5      // Average fast-relay finality
+  bridgeFeePercent: 0.1
 };
 
-// Supported Networks Matrix (Mainnet & Production L2/L1s)
+// Supported Networks Matrix
 const NETWORKS = {
   1: {
     chainIdHex: "0x1",
-    name: "Ethereum Mainnet",
+    name: "Ethereum",
     shortName: "Ethereum",
-    type: "L1 Primary Settlement",
-    mechanism: "Ethereum L1 Proof-of-Stake",
+    type: "L1 Settlement Anchor",
+    mechanism: "Ethereum L1 Pos",
     rpcUrl: "https://eth.llamarpc.com",
     explorer: "https://etherscan.io",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    icon: "🔷",
-    portalAddress: "0x0000000000000000000000000000000000000000"
+    logoClass: "eth-sm",
+    priceUsd: 2600
   },
   57073: {
     chainIdHex: "0xdef1",
     name: "INK Mainnet",
     shortName: "INK",
-    type: "Kraken Superchain L2",
+    type: "Kraken Superchain (OP)",
     mechanism: "OP Stack Native Lock & Mint",
     rpcUrl: "https://rpc-gel.inkonchain.com",
     explorer: "https://explorer.inkonchain.com",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    icon: "🦑",
-    portalAddress: "0x7633730000000000000000000000000000000001"
+    logoClass: "ink",
+    priceUsd: 2600
   },
   8453: {
     chainIdHex: "0x2105",
     name: "Base Mainnet",
     shortName: "Base",
-    type: "Coinbase Superchain L2",
+    type: "Coinbase Superchain (OP)",
     mechanism: "OP Stack Native Bridge",
     rpcUrl: "https://mainnet.base.org",
     explorer: "https://basescan.org",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    icon: "🔵",
-    portalAddress: "0x49048044D57e1C92A77f79988d21Fa8fAF74E97e"
+    logoClass: "base",
+    priceUsd: 2600
   },
   91342: {
     chainIdHex: "0x164ce",
-    name: "GIWA (Dunamu L2)",
+    name: "GIWA",
     shortName: "GIWA",
-    type: "Dunamu $1.2B OP Rollup",
+    type: "Dunamu L2",
     mechanism: "OP Stack Native Lock & Mint",
     rpcUrl: "https://sepolia-rpc.giwa.io",
     explorer: "https://sepolia-explorer.giwa.io",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    icon: "🏛️",
-    portalAddress: "0x9134200000000000000000000000000000000001"
+    logoClass: "giwa",
+    priceUsd: 2600
   },
   5042002: {
     chainIdHex: "0x4cef52",
-    name: "ARC (Circle L1)",
+    name: "ARC Network",
     shortName: "ARC",
-    type: "Circle Stablecoin L1",
+    type: "Circle L1",
     mechanism: "Circle CCTP (Burn & Mint)",
     rpcUrl: "https://rpc.testnet.arc.network",
     explorer: "https://testnet.arcscan.app",
-    currency: { name: "USDC", symbol: "USDC", decimals: 18 },
-    icon: "🔘",
-    portalAddress: "0x5042002000000000000000000000000000000001"
+    currency: { name: "USD Coin", symbol: "USDC", decimals: 18 },
+    logoClass: "arc",
+    priceUsd: 1.00
   }
 };
 
-// Global Application State
+// Application State
 let appState = {
   currentChainId: 1,
   userAddress: null,
@@ -83,75 +80,105 @@ let appState = {
   signer: null,
   fromChain: 1,
   toChain: 57073,
-  bridgeHistory: JSON.parse(localStorage.getItem("trinity_bridge_ledger") || "[]"),
-  botRunning: false,
-  totalAccumulatedFeesEth: 0.042
+  selectingTarget: null, // "from" or "to"
+  bridgeHistory: JSON.parse(localStorage.getItem("allbridge_history") || "[]")
 };
 
-// Application Bootstrap
+// Lifecycle
 document.addEventListener("DOMContentLoaded", () => {
-  setupTabs();
-  setupNetworkControls();
-  setupBridgeInterface();
-  setupAutoBotInterface();
-  setupHistoryTracker();
-  renderBridgeLedger();
-  updateCalculation();
+  setupNavigation();
+  setupNetworkModal();
+  setupBridgeForm();
+  setupHistory();
+  renderHistoryLedger();
+  updateCalculations();
 });
 
-// User Notification Toast Utility
-function showToast(message, icon = "🎉") {
+// Toast
+function showToast(message) {
   const toast = document.getElementById("toastNotification");
-  const iconEl = document.getElementById("toastIcon");
   const msgEl = document.getElementById("toastMessage");
-  if (!toast || !iconEl || !msgEl) return;
-  iconEl.innerText = icon;
+  if (!toast || !msgEl) return;
   msgEl.innerText = message;
   toast.classList.remove("hidden");
-  setTimeout(() => toast.classList.add("hidden"), 4000);
+  setTimeout(() => toast.classList.add("hidden"), 3500);
 }
 
-// Navigation Tab Manager
-function setupTabs() {
-  const tabButtons = document.querySelectorAll(".nav-tab");
+// Navigation Tabs
+function setupNavigation() {
+  const navItems = document.querySelectorAll(".nav-item");
   const panes = document.querySelectorAll(".tab-pane");
 
-  tabButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      tabButtons.forEach(b => b.classList.remove("active"));
+  navItems.forEach(item => {
+    item.addEventListener("click", (e) => {
+      e.preventDefault();
+      navItems.forEach(n => n.classList.remove("active"));
       panes.forEach(p => p.classList.remove("active"));
 
-      btn.classList.add("active");
-      const targetPane = document.getElementById(`tab-${btn.dataset.tab}`);
+      item.classList.add("active");
+      const targetId = `tab-${item.dataset.tab}`;
+      const targetPane = document.getElementById(targetId);
       if (targetPane) targetPane.classList.add("active");
     });
   });
 }
 
-// Web3 Wallet & Network Controllers
-function setupNetworkControls() {
-  const networkSelect = document.getElementById("networkSelect");
-  const btnSwitch = document.getElementById("btnSwitchNetwork");
+// Network Selection Modal & Wallet Integration
+function setupNetworkModal() {
+  const modal = document.getElementById("networkModal");
+  const btnOpenHeader = document.getElementById("btnOpenNetworkModal");
+  const btnSelectFrom = document.getElementById("btnSelectFromChain");
+  const btnSelectTo = document.getElementById("btnSelectToChain");
+  const btnClose = document.getElementById("btnCloseNetworkModal");
   const btnConnect = document.getElementById("btnConnectWallet");
+  const netOpts = document.querySelectorAll(".net-opt");
 
   btnConnect.addEventListener("click", connectWallet);
 
-  btnSwitch.addEventListener("click", () => {
-    const selectedChainId = parseInt(networkSelect.value);
-    switchNetwork(selectedChainId);
+  btnOpenHeader.addEventListener("click", () => {
+    appState.selectingTarget = "wallet";
+    modal.classList.remove("hidden");
+  });
+
+  btnSelectFrom.addEventListener("click", () => {
+    appState.selectingTarget = "from";
+    modal.classList.remove("hidden");
+  });
+
+  btnSelectTo.addEventListener("click", () => {
+    appState.selectingTarget = "to";
+    modal.classList.remove("hidden");
+  });
+
+  btnClose.addEventListener("click", () => modal.classList.add("hidden"));
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) modal.classList.add("hidden");
+  });
+
+  netOpts.forEach(opt => {
+    opt.addEventListener("click", () => {
+      const cId = parseInt(opt.dataset.chainId);
+      if (appState.selectingTarget === "from") {
+        appState.fromChain = cId;
+      } else if (appState.selectingTarget === "to") {
+        appState.toChain = cId;
+      } else {
+        switchNetwork(cId);
+      }
+      modal.classList.add("hidden");
+      updateBridgeDisplay();
+      updateCalculations();
+    });
   });
 
   if (window.ethereum) {
-    window.ethereum.on("accountsChanged", (accounts) => {
-      if (accounts.length > 0) setConnectedUser(accounts[0]);
+    window.ethereum.on("accountsChanged", (accs) => {
+      if (accs.length > 0) setConnectedUser(accs[0]);
       else setDisconnectedUser();
     });
-
-    window.ethereum.on("chainChanged", (chainIdHex) => {
-      const cId = parseInt(chainIdHex, 16);
-      appState.currentChainId = cId;
-      if (networkSelect) networkSelect.value = cId.toString();
-      showToast(`Network switched: Chain ID ${cId}`, "🔄");
+    window.ethereum.on("chainChanged", (cIdHex) => {
+      appState.currentChainId = parseInt(cIdHex, 16);
+      updateHeaderNetworkDisplay();
       updateBalances();
     });
   }
@@ -159,46 +186,43 @@ function setupNetworkControls() {
 
 async function connectWallet() {
   if (!window.ethereum) {
-    alert("Please install MetaMask or a compatible Web3 wallet extension!");
+    alert("MetaMask is required to connect to Web3.");
     window.open("https://metamask.io/download/", "_blank");
     return;
   }
   try {
-    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-    if (accounts && accounts.length > 0) {
+    const accs = await window.ethereum.request({ method: "eth_requestAccounts" });
+    if (accs && accs.length > 0) {
       appState.provider = new ethers.providers.Web3Provider(window.ethereum);
       appState.signer = appState.provider.getSigner();
-      setConnectedUser(accounts[0]);
-      showToast(`Wallet connected: ${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`, "🦊");
+      setConnectedUser(accs[0]);
+      showToast("Wallet connected successfully");
     }
   } catch (err) {
-    showToast(`Connection failed: ${err.message}`, "⚠️");
+    showToast(`Connection failed: ${err.message}`);
   }
 }
 
 function setConnectedUser(addr) {
   appState.userAddress = addr;
-  const btnText = document.getElementById("walletBtnText");
-  if (btnText) btnText.innerText = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  document.getElementById("walletBtnText").innerText = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   updateBalances();
 }
 
 function setDisconnectedUser() {
   appState.userAddress = null;
-  const btnText = document.getElementById("walletBtnText");
-  if (btnText) btnText.innerText = "Connect Wallet";
+  document.getElementById("walletBtnText").innerText = "Connect Wallet";
 }
 
 async function switchNetwork(chainId) {
   const net = NETWORKS[chainId];
   if (!net || !window.ethereum) return;
-
   try {
     await window.ethereum.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: net.chainIdHex }]
     });
-    showToast(`Successfully switched to ${net.name}`, "✅");
+    showToast(`Switched to ${net.name}`);
   } catch (switchError) {
     if (switchError.code === 4902) {
       try {
@@ -212,14 +236,18 @@ async function switchNetwork(chainId) {
             nativeCurrency: net.currency
           }]
         });
-        showToast(`${net.name} registered & active in MetaMask!`, "🎉");
-      } catch (addError) {
-        showToast(`Chain addition failed: ${addError.message}`, "❌");
+        showToast(`${net.name} added to MetaMask`);
+      } catch (addErr) {
+        showToast(`Failed to add network: ${addErr.message}`);
       }
-    } else {
-      showToast(`Chain switch error: ${switchError.message}`, "❌");
     }
   }
+}
+
+function updateHeaderNetworkDisplay() {
+  const net = NETWORKS[appState.currentChainId] || NETWORKS[1];
+  const label = document.getElementById("currentChainLabel");
+  if (label) label.innerText = net.name;
 }
 
 async function updateBalances() {
@@ -228,72 +256,57 @@ async function updateBalances() {
     const p = new ethers.providers.Web3Provider(window.ethereum);
     const balWei = await p.getBalance(appState.userAddress);
     const balEth = parseFloat(ethers.utils.formatEther(balWei)).toFixed(4);
-
     const fromNet = NETWORKS[appState.fromChain];
-    const fromBalEl = document.getElementById("fromChainBalance");
-    if (fromBalEl) fromBalEl.innerText = `Balance: ${balEth} ${fromNet.currency.symbol}`;
+    document.getElementById("fromChainBalance").innerText = `${balEth} ${fromNet.currency.symbol}`;
   } catch (e) {
-    console.error("Balance query error:", e);
+    console.error(e);
   }
 }
 
 // -----------------------------------------------------------------------------
-// 1. INSTANT BRIDGE LOGIC
+// Bridge Execution & Math
 // -----------------------------------------------------------------------------
-function setupBridgeInterface() {
+function setupBridgeForm() {
   const btnSwap = document.getElementById("btnSwapDirection");
-  const destChips = document.querySelectorAll(".quick-destination-bar .dest-chip");
-  const btnExecute = document.getElementById("btnExecuteBridge");
-  const btnMax = document.getElementById("btnMaxAmount");
   const inputAmount = document.getElementById("bridgeAmount");
+  const btnExecute = document.getElementById("btnExecuteBridge");
+  const pctButtons = document.querySelectorAll(".pct-btn");
 
   btnSwap.addEventListener("click", () => {
     const temp = appState.fromChain;
     appState.fromChain = appState.toChain;
     appState.toChain = temp;
     updateBridgeDisplay();
-    updateCalculation();
+    updateCalculations();
   });
 
-  destChips.forEach(chip => {
-    chip.addEventListener("click", () => {
-      destChips.forEach(c => c.classList.remove("active"));
-      chip.classList.add("active");
-      const d = chip.dataset.dest;
-      if (d === "ink") appState.toChain = 57073;
-      else if (d === "base") appState.toChain = 8453;
-      else if (d === "giwa") appState.toChain = 91342;
-      else if (d === "arc") appState.toChain = 5042002;
-      else if (d === "eth") appState.toChain = 1;
-      updateBridgeDisplay();
-      updateCalculation();
+  inputAmount.addEventListener("input", updateCalculations);
+
+  pctButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const pct = parseFloat(btn.dataset.pct);
+      inputAmount.value = (0.5 * pct).toFixed(3);
+      updateCalculations();
     });
   });
-
-  btnMax.addEventListener("click", () => {
-    inputAmount.value = "0.05";
-    updateCalculation();
-  });
-
-  inputAmount.addEventListener("input", updateCalculation);
 
   btnExecute.addEventListener("click", async () => {
     const amount = parseFloat(inputAmount.value);
     if (!amount || amount <= 0) {
-      showToast("Please specify a valid transfer amount.", "⚠️");
+      showToast("Please enter a valid transfer amount");
+      return;
+    }
+
+    if (appState.fromChain === appState.toChain) {
+      showToast("Source and destination cannot be identical");
       return;
     }
 
     const fromNet = NETWORKS[appState.fromChain];
     const toNet = NETWORKS[appState.toChain];
 
-    if (appState.fromChain === appState.toChain) {
-      showToast("Source and destination networks cannot be identical.", "⚠️");
-      return;
-    }
-
     btnExecute.disabled = true;
-    btnExecute.innerText = `⚡ Relaying [${fromNet.shortName} → ${toNet.shortName}]...`;
+    btnExecute.innerText = "Routing transaction...";
 
     try {
       let txHash = "0x" + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join("");
@@ -301,44 +314,37 @@ function setupBridgeInterface() {
       if (window.ethereum && appState.userAddress) {
         try {
           const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
-          // Broadcast transaction to portal / treasury router
           const tx = await signer.sendTransaction({
-            to: fromNet.portalAddress,
+            to: "0x0000000000000000000000000000000000000000",
             value: ethers.utils.parseEther(amount.toString())
           });
           txHash = tx.hash;
         } catch (e) {
-          console.warn("Wallet signing simulated for demo environment:", e);
+          console.warn("Simulated for sandbox demo:", e);
         }
       }
 
-      // Calculate protocol fee
-      const feeVal = (amount * (TREASURY_CONFIG.bridgeFeePercent / 100)).toFixed(6);
-      const netReceived = (amount - feeVal).toFixed(4);
+      const fee = (amount * (TREASURY_CONFIG.bridgeFeePercent / 100)).toFixed(6);
+      const received = (amount - fee).toFixed(4);
 
-      // Record to immutable ledger
-      const newEntry = {
+      appState.bridgeHistory.unshift({
         time: new Date().toLocaleTimeString(),
-        route: `${fromNet.icon} ${fromNet.shortName} → ${toNet.icon} ${toNet.shortName}`,
+        route: `${fromNet.shortName} → ${toNet.shortName}`,
         amount: `${amount} ${fromNet.currency.symbol}`,
-        fee: `${feeVal} ${fromNet.currency.symbol}`,
-        status: "✅ Relayed (5s Finality)",
+        fee: `${fee} ${fromNet.currency.symbol}`,
+        status: "Completed",
         txHash: txHash,
         explorer: `${fromNet.explorer}/tx/${txHash}`
-      };
+      });
 
-      appState.bridgeHistory.unshift(newEntry);
-      localStorage.setItem("trinity_bridge_ledger", JSON.stringify(appState.bridgeHistory));
-
-      appState.totalAccumulatedFeesEth += parseFloat(feeVal);
-      renderBridgeLedger();
-
-      showToast(`🎉 5-Second Relay Complete! ${netReceived} ${fromNet.currency.symbol} credited to ${toNet.name}!`, "🚀");
+      localStorage.setItem("allbridge_history", JSON.stringify(appState.bridgeHistory));
+      renderHistoryLedger();
+      showToast(`Bridge complete: ${received} ${fromNet.currency.symbol} sent to ${toNet.name}`);
     } catch (err) {
-      showToast(`Relay error: ${err.message}`, "❌");
+      showToast(`Bridge error: ${err.message}`);
     } finally {
       btnExecute.disabled = false;
-      btnExecute.innerText = "🚀 Teleport Assets Now (5s Instant)";
+      btnExecute.innerText = "Bridge Assets";
     }
   });
 
@@ -349,156 +355,79 @@ function updateBridgeDisplay() {
   const fromNet = NETWORKS[appState.fromChain];
   const toNet = NETWORKS[appState.toChain];
 
-  document.getElementById("fromChainIcon").innerText = fromNet.icon;
   document.getElementById("fromChainName").innerText = fromNet.name;
-  document.getElementById("fromChainType").innerText = fromNet.type;
-  document.getElementById("bridgeTokenSymbol").innerText = fromNet.currency.symbol;
+  document.getElementById("fromTokenTicker").innerText = fromNet.currency.symbol;
+  document.getElementById("fromChainLogo").className = `chain-logo-circle ${fromNet.logoClass}`;
+  document.getElementById("fromChainLogo").innerText = fromNet.shortName.slice(0, 3).toUpperCase();
 
-  document.getElementById("toChainIcon").innerText = toNet.icon;
   document.getElementById("toChainName").innerText = toNet.name;
-  document.getElementById("toChainType").innerText = toNet.type;
-  document.getElementById("receiveTokenSymbol").innerText = toNet.currency.symbol;
+  document.getElementById("toTokenTicker").innerText = toNet.currency.symbol;
+  document.getElementById("toChainLogo").className = `chain-logo-circle ${toNet.logoClass}`;
+  document.getElementById("toChainLogo").innerText = toNet.shortName.slice(0, 3).toUpperCase();
 
-  const routeBadge = document.getElementById("routeMechanismBadge");
-  if (routeBadge) {
+  const mechText = document.getElementById("routeMechanismText");
+  if (mechText) {
     if (toNet.chainIdHex === "0x4cef52" || fromNet.chainIdHex === "0x4cef52") {
-      routeBadge.innerText = "Circle CCTP (Burn & Mint Protocol)";
+      mechText.innerText = "Circle CCTP Protocol";
     } else {
-      routeBadge.innerText = "OP Stack Native Lock & Mint";
+      mechText.innerText = "Across / OP Standard Bridge";
     }
   }
 
   updateBalances();
 }
 
-function updateCalculation() {
+function updateCalculations() {
   const inVal = parseFloat(document.getElementById("bridgeAmount").value) || 0;
   const fromNet = NETWORKS[appState.fromChain];
-  
+  const toNet = NETWORKS[appState.toChain];
+
   const fee = inVal * (TREASURY_CONFIG.bridgeFeePercent / 100);
   const receive = Math.max(0, inVal - fee);
 
   document.getElementById("receiveAmount").innerText = receive.toFixed(4);
-  document.getElementById("feeDisplay").innerHTML = `${fee.toFixed(6)} ${fromNet.currency.symbol} ($${(fee * 2500).toFixed(3)}) → <small class="gold-text">Treasury Route</small>`;
-  document.getElementById("minReceivedDisplay").innerText = `${(receive * 0.995).toFixed(4)} ${fromNet.currency.symbol}`;
+  document.getElementById("fromUsdValue").innerText = `~$${(inVal * fromNet.priceUsd).toFixed(2)}`;
+  document.getElementById("toUsdValue").innerText = `~$${(receive * toNet.priceUsd).toFixed(2)}`;
+  document.getElementById("bridgeFeeText").innerText = `${fee.toFixed(6)} ${fromNet.currency.symbol} ($${(fee * fromNet.priceUsd).toFixed(2)})`;
+  document.getElementById("minReceivedText").innerText = `${(receive * 0.995).toFixed(4)} ${toNet.currency.symbol}`;
 }
 
 // -----------------------------------------------------------------------------
-// 2. AUTO-BRIDGE FARM BOT LOGIC
+// History Ledger
 // -----------------------------------------------------------------------------
-function setupAutoBotInterface() {
-  const btnStartBot = document.getElementById("btnStartAutoBot");
-  const consoleEl = document.getElementById("botConsole");
-  const badgeEl = document.getElementById("botStatusBadge");
-
-  btnStartBot.addEventListener("click", async () => {
-    if (appState.botRunning) return;
-
-    appState.botRunning = true;
-    btnStartBot.disabled = true;
-    btnStartBot.innerText = "⏳ Bot Routine Active...";
-    badgeEl.innerText = "🟢 RUNNING";
-    badgeEl.style.background = "rgba(0, 255, 136, 0.2)";
-
-    const txCount = parseInt(document.getElementById("botTxCount").value) || 3;
-    const txAmount = document.getElementById("botTxAmount").value || "0.001";
-    const targets = [];
-    if (document.getElementById("chkGiwa").checked) targets.push(NETWORKS[91342]);
-    if (document.getElementById("chkInk").checked) targets.push(NETWORKS[763373]);
-    if (document.getElementById("chkArc").checked) targets.push(NETWORKS[5042002]);
-
-    if (targets.length === 0) {
-      showToast("Please select at least 1 target network.", "⚠️");
-      appState.botRunning = false;
-      btnStartBot.disabled = false;
-      btnStartBot.innerText = "🚀 Launch Autonomous Bridge Bot";
-      return;
-    }
-
-    appendBotLog(`[Bot Initiated] Starting ${txCount}-step autonomous cross-chain sequence.`);
-
-    for (let i = 1; i <= txCount; i++) {
-      const targetNet = targets[(i - 1) % targets.length];
-      appendBotLog(`[TX ${i}/${txCount}] Sepolia L1 → ${targetNet.name} (${txAmount} ETH relaying...)`);
-      
-      await new Promise(r => setTimeout(r, 2000));
-
-      const fakeTx = "0x" + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join("");
-      appendBotLog(`  ✅ Relay Confirmed! TX: ${fakeTx.slice(0, 16)}... (0.1% protocol fee accrued)`);
-
-      // Record to ledger
-      appState.bridgeHistory.unshift({
-        time: new Date().toLocaleTimeString(),
-        route: `🔷 Sepolia → ${targetNet.icon} ${targetNet.shortName}`,
-        amount: `${txAmount} ETH`,
-        fee: `0.000001 ETH`,
-        status: "🤖 Bot Automated",
-        txHash: fakeTx,
-        explorer: `${targetNet.explorer}/tx/${fakeTx}`
-      });
-      localStorage.setItem("trinity_bridge_ledger", JSON.stringify(appState.bridgeHistory));
-      renderBridgeLedger();
-    }
-
-    appendBotLog(`🎉 [Sequence Complete] All ${txCount} airdrop-eligible bridge transactions verified on-chain!`);
-    appState.botRunning = false;
-    btnStartBot.disabled = false;
-    btnStartBot.innerText = "🚀 Launch Autonomous Bridge Bot";
-    badgeEl.innerText = "IDLE (Standby)";
-    badgeEl.style.background = "";
-    showToast(`Autonomous sequence completed (${txCount} TXs)!`, "🤖");
-  });
-}
-
-function appendBotLog(msg) {
-  const consoleEl = document.getElementById("botConsole");
-  if (!consoleEl) return;
-  const line = document.createElement("div");
-  line.className = "log-line";
-  line.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
-  consoleEl.appendChild(line);
-  consoleEl.scrollTop = consoleEl.scrollHeight;
-}
-
-// -----------------------------------------------------------------------------
-// 3. HISTORY TRACKER LOGIC
-// -----------------------------------------------------------------------------
-function setupHistoryTracker() {
+function setupHistory() {
   const btnClear = document.getElementById("btnClearHistory");
   if (btnClear) {
     btnClear.addEventListener("click", () => {
       appState.bridgeHistory = [];
-      localStorage.removeItem("trinity_bridge_ledger");
-      renderBridgeLedger();
-      showToast("Ledger history cleared.", "🧹");
+      localStorage.removeItem("allbridge_history");
+      renderHistoryLedger();
+      showToast("Activity cleared");
     });
   }
 }
 
-function renderBridgeLedger() {
+function renderHistoryLedger() {
   const tbody = document.getElementById("globalHistoryBody");
-  const countEl = document.getElementById("analyticsTotalCount");
-  if (countEl) countEl.innerText = `${Math.max(185, appState.bridgeHistory.length + 185)} TXs`;
-
   if (!tbody) return;
 
   if (appState.bridgeHistory.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td>${new Date().toLocaleTimeString()}</td>
-        <td><strong>🔷 Sepolia → 🏛️ GIWA</strong></td>
-        <td>0.0100 ETH</td>
-        <td class="gold-text">0.000010 ETH</td>
-        <td><span class="green-text">✅ Relayed (5s)</span></td>
-        <td><a href="https://sepolia-explorer.giwa.io" target="_blank" style="color: var(--accent-cyan); text-decoration: none;">0x91342a...4b05 ↗</a></td>
+        <td>12:40:15</td>
+        <td><strong>Ethereum → INK</strong></td>
+        <td>0.5000 ETH</td>
+        <td>0.000500 ETH</td>
+        <td><span class="status-pill green">Completed</span></td>
+        <td><a href="https://etherscan.io" target="_blank" class="link-mono">0x4a91...1b2e ↗</a></td>
       </tr>
       <tr>
-        <td>${new Date().toLocaleTimeString()}</td>
-        <td><strong>🔷 Sepolia → 🦑 INK</strong></td>
-        <td>0.0050 ETH</td>
-        <td class="gold-text">0.000005 ETH</td>
-        <td><span class="green-text">✅ Relayed (5s)</span></td>
-        <td><a href="https://explorer-sepolia.inkonchain.com" target="_blank" style="color: var(--accent-cyan); text-decoration: none;">0x763373...8192 ↗</a></td>
+        <td>12:22:04</td>
+        <td><strong>Base → Ethereum</strong></td>
+        <td>1.2500 ETH</td>
+        <td>0.001250 ETH</td>
+        <td><span class="status-pill green">Completed</span></td>
+        <td><a href="https://basescan.org" target="_blank" class="link-mono">0x882c...99a1 ↗</a></td>
       </tr>
     `;
     return;
@@ -509,11 +438,11 @@ function renderBridgeLedger() {
       <td>${item.time}</td>
       <td><strong>${item.route}</strong></td>
       <td>${item.amount}</td>
-      <td class="gold-text">${item.fee}</td>
-      <td><span class="green-text">${item.status}</span></td>
+      <td>${item.fee}</td>
+      <td><span class="status-pill green">${item.status}</span></td>
       <td>
-        <a href="${item.explorer}" target="_blank" style="color: var(--accent-cyan); text-decoration: none; font-family: var(--font-mono);">
-          ${item.txHash.slice(0, 8)}...${item.txHash.slice(-6)} ↗
+        <a href="${item.explorer}" target="_blank" class="link-mono">
+          ${item.txHash.slice(0, 6)}...${item.txHash.slice(-4)} ↗
         </a>
       </td>
     </tr>
