@@ -1,7 +1,7 @@
-# 🌌 TRINITY BRIDGE — Next-Gen Cross-Chain Portal
+# 🌉 ALL BRIDGE — Next-Gen Cross-Chain Portal
 ### Unified Cross-Chain Liquidity Mesh for ARC (Circle), INK (Kraken), and GIWA (Dunamu)
 
-TRINITY BRIDGE is a production-grade, non-custodial, high-speed cross-chain portal and automated airdrop farming suite connecting Ethereum Sepolia (L1), GIWA Sepolia (Dunamu), INK Sepolia (Kraken), and ARC Testnet (Circle).
+ALL BRIDGE is a production-grade, non-custodial, high-speed cross-chain portal and automated airdrop farming suite connecting Ethereum Sepolia (L1), GIWA Sepolia (Dunamu), INK Sepolia (Kraken), and ARC Testnet (Circle).
 
 ---
 

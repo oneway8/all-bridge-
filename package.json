@@ -1,7 +1,7 @@
 {
-  "name": "trinity-bridge-memeforge",
+  "name": "all-bridge",
   "version": "1.0.0",
-  "description": "ARC · INK · GIWA Unified Bridge & Meme Launchpad DApp",
+  "description": "ALL BRIDGE — ARC · INK · GIWA Unified Cross-Chain Portal",
   "scripts": {
     "start": "python3 -m http.server 8088"
   },
