@@ -8,6 +8,15 @@ const TREASURY_CONFIG = {
   bridgeFeePercent: 0.1
 };
 
+// Official Chain SVG Vector Logos
+const CHAIN_ICONS = {
+  eth: `<svg viewBox="0 0 24 24" width="26" height="26"><path fill="#627EEA" d="M12 0L11.8 0.6V16.3L12 16.5L19.5 12.1L12 0Z"/><path fill="#8A92B2" d="M12 0L4.5 12.1L12 16.5V0Z"/><path fill="#627EEA" d="M12 17.8L11.9 18V23.7L12 24L19.5 13.4L12 17.8Z"/><path fill="#8A92B2" d="M12 24V17.8L4.5 13.4L12 24Z"/><path fill="#454A75" d="M12 16.5L19.5 12.1L12 8.7V16.5Z"/><path fill="#41456B" d="M4.5 12.1L12 16.5V8.7L4.5 12.1Z"/></svg>`,
+  base: `<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="12" r="12" fill="#0052FF"/><path d="M12 19C15.866 19 19 15.866 19 12C19 8.13401 15.866 5 12 5C8.35824 5 5.36725 7.78168 5.03857 11.3125H14.1562V12.6875H5.03857C5.36725 16.2183 8.35824 19 12 19Z" fill="white"/></svg>`,
+  ink: `<svg viewBox="0 0 24 24" width="26" height="26"><rect width="24" height="24" rx="12" fill="#7C3AED"/><path d="M7 12C7 9.23858 9.23858 7 12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17C10.5 17 9 16 9 14.5C9 13.5 10 13 11 13C12 13 13 13.5 13 14" stroke="white" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="10" r="1.5" fill="white"/></svg>`,
+  giwa: `<svg viewBox="0 0 24 24" width="26" height="26"><rect width="24" height="24" rx="12" fill="#059669"/><path d="M6 14L12 8L18 14" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 16H15" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>`,
+  arc: `<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="12" r="12" fill="#2775CA"/><path d="M12 6.5C8.96 6.5 6.5 8.96 6.5 12C6.5 15.04 8.96 17.5 12 17.5C15.04 17.5 17.5 15.04 17.5 12C17.5 8.96 15.04 6.5 12 6.5ZM12.7 15.1V16H11.3V15.1C9.9 14.9 9 14 9 12.8H10.5C10.5 13.4 11 13.9 12 13.9C12.9 13.9 13.5 13.4 13.5 12.8C13.5 12.1 12.8 11.8 11.5 11.5C9.8 11 9.1 10.3 9.1 9.2C9.1 8 10 7.2 11.3 7V6.1H12.7V7C13.8 7.2 14.7 7.9 14.8 9H13.3C13.2 8.4 12.7 8.1 12 8.1C11.2 8.1 10.6 8.5 10.6 9.1C10.6 9.7 11.1 10 12.4 10.3C14.1 10.8 15 11.5 15 12.7C15 14 14 14.9 12.7 15.1Z" fill="white"/></svg>`
+};
+
 // Supported Networks Matrix
 const NETWORKS = {
   1: {
@@ -15,35 +24,35 @@ const NETWORKS = {
     name: "Ethereum",
     shortName: "Ethereum",
     type: "L1 Settlement Anchor",
-    mechanism: "Ethereum L1 Pos",
+    mechanism: "Ethereum L1 Proof-of-Stake",
     rpcUrl: "https://eth.llamarpc.com",
     explorer: "https://etherscan.io",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    logoClass: "eth-sm",
+    iconKey: "eth",
     priceUsd: 2600
   },
   57073: {
     chainIdHex: "0xdef1",
     name: "INK Mainnet",
     shortName: "INK",
-    type: "Kraken Superchain (OP)",
+    type: "Kraken Superchain L2",
     mechanism: "OP Stack Native Lock & Mint",
     rpcUrl: "https://rpc-gel.inkonchain.com",
     explorer: "https://explorer.inkonchain.com",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    logoClass: "ink",
+    iconKey: "ink",
     priceUsd: 2600
   },
   8453: {
     chainIdHex: "0x2105",
     name: "Base Mainnet",
     shortName: "Base",
-    type: "Coinbase Superchain (OP)",
+    type: "Coinbase Superchain L2",
     mechanism: "OP Stack Native Bridge",
     rpcUrl: "https://mainnet.base.org",
     explorer: "https://basescan.org",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    logoClass: "base",
+    iconKey: "base",
     priceUsd: 2600
   },
   91342: {
@@ -55,19 +64,19 @@ const NETWORKS = {
     rpcUrl: "https://sepolia-rpc.giwa.io",
     explorer: "https://sepolia-explorer.giwa.io",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    logoClass: "giwa",
+    iconKey: "giwa",
     priceUsd: 2600
   },
   5042002: {
     chainIdHex: "0x4cef52",
     name: "ARC Network",
     shortName: "ARC",
-    type: "Circle L1",
+    type: "Circle Stablecoin L1",
     mechanism: "Circle CCTP (Burn & Mint)",
     rpcUrl: "https://rpc.testnet.arc.network",
     explorer: "https://testnet.arcscan.app",
     currency: { name: "USD Coin", symbol: "USDC", decimals: 18 },
-    logoClass: "arc",
+    iconKey: "arc",
     priceUsd: 1.00
   }
 };
@@ -357,13 +366,11 @@ function updateBridgeDisplay() {
 
   document.getElementById("fromChainName").innerText = fromNet.name;
   document.getElementById("fromTokenTicker").innerText = fromNet.currency.symbol;
-  document.getElementById("fromChainLogo").className = `chain-logo-circle ${fromNet.logoClass}`;
-  document.getElementById("fromChainLogo").innerText = fromNet.shortName.slice(0, 3).toUpperCase();
+  document.getElementById("fromChainLogo").innerHTML = CHAIN_ICONS[fromNet.iconKey] || fromNet.shortName.slice(0, 3);
 
   document.getElementById("toChainName").innerText = toNet.name;
   document.getElementById("toTokenTicker").innerText = toNet.currency.symbol;
-  document.getElementById("toChainLogo").className = `chain-logo-circle ${toNet.logoClass}`;
-  document.getElementById("toChainLogo").innerText = toNet.shortName.slice(0, 3).toUpperCase();
+  document.getElementById("toChainLogo").innerHTML = CHAIN_ICONS[toNet.iconKey] || toNet.shortName.slice(0, 3);
 
   const mechText = document.getElementById("routeMechanismText");
   if (mechText) {
