@@ -12,12 +12,11 @@ const TREASURY_CONFIG = {
 const CHAIN_ICONS = {
   eth: `<img src="assets/ethereum.png" alt="Ethereum" width="28" height="28" class="chain-img">`,
   ink: `<img src="assets/ink.png" alt="INK" width="28" height="28" class="chain-img">`,
-  base: `<img src="assets/base.png" alt="Base" width="28" height="28" class="chain-img">`,
   giwa: `<img src="assets/giwa.svg" alt="GIWA" width="28" height="28" class="chain-img giwa-img">`,
   arc: `<img src="assets/arc.svg" alt="ARC" width="28" height="28" class="chain-img arc-img">`
 };
 
-// Supported Networks Matrix
+// Supported Networks Matrix (Ethereum L1 Anchor + The Big 3 Institutional Chains)
 const NETWORKS = {
   1: {
     chainIdHex: "0x1",
@@ -41,18 +40,6 @@ const NETWORKS = {
     explorer: "https://explorer.inkonchain.com",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
     iconKey: "ink",
-    priceUsd: 2600
-  },
-  8453: {
-    chainIdHex: "0x2105",
-    name: "Base Mainnet",
-    shortName: "Base",
-    type: "Coinbase Superchain L2",
-    mechanism: "OP Stack Native Bridge",
-    rpcUrl: "https://mainnet.base.org",
-    explorer: "https://basescan.org",
-    currency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    iconKey: "base",
     priceUsd: 2600
   },
   91342: {
