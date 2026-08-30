@@ -1,0 +1,29 @@
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*private*
+*wallet*.json
+*secrets*
+
+# Logs & Database
+*.log
+*.sqlite
+*.db
+bridge_executions.json
+meme_deployments.json
+
+# Dependencies & Build
+node_modules/
+dist/
+.vercel/
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc
+
+# Local IDE
+.vscode/
+.idea/

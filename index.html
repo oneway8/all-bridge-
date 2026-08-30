@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRINITY BRIDGE — Next-Gen Cross-Chain Portal | ARC · INK · GIWA</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Ethers.js v5 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-background">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+  </div>
+
+  <!-- Global Header / Navigation -->
+  <header class="navbar">
+    <div class="nav-brand">
+      <div class="brand-logo">🌌</div>
+      <div class="brand-text">
+        <h1>TRINITY BRIDGE</h1>
+        <span class="badge-sub">ARC · INK · GIWA ALLIANCE</span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="bridge">
+        <span class="icon">⚡</span> Instant Bridge
+      </button>
+      <button class="nav-tab" data-tab="autofarm">
+        <span class="icon">🤖</span> Auto-Bridge Bot
+      </button>
+      <button class="nav-tab" data-tab="history">
+        <span class="icon">📜</span> Live Ledger
+      </button>
+      <button class="nav-tab" data-tab="analytics">
+        <span class="icon">📊</span> Protocol Analytics
+      </button>
+    </nav>
+
+    <!-- Wallet & Network Controls -->
+    <div class="nav-controls">
+      <div class="chain-selector-wrapper">
+        <select id="networkSelect" class="chain-dropdown">
+          <option value="11155111">🔷 Ethereum Sepolia (L1)</option>
+          <option value="91342">🏛️ GIWA Sepolia (Dunamu L2)</option>
+          <option value="763373">🦑 INK Sepolia (Kraken L2)</option>
+          <option value="5042002">🔘 ARC Testnet (Circle L1)</option>
+        </select>
+        <button id="btnSwitchNetwork" class="btn-sm btn-outline">Switch Chain</button>
+      </div>
+
+      <button id="btnConnectWallet" class="btn-primary btn-glow">
+        <span class="wallet-icon">🦊</span>
+        <span id="walletBtnText">Connect Wallet</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main App Container -->
+  <main class="main-content">
+
+    <!-- 1. INSTANT BRIDGE TAB (CORE) -->
+    <section id="tab-bridge" class="tab-pane active">
+      <div class="bridge-layout">
+        <!-- Main Interactive Bridge Card -->
+        <div class="bridge-main-card glass-panel">
+          <div class="card-header-flex">
+            <div>
+              <h2>⚡ Ultra-Fast Cross-Chain Relay</h2>
+              <p>Instant asset teleportation across Ethereum L1, GIWA (Dunamu), INK (Kraken), and ARC (Circle).</p>
+            </div>
+            <div class="bridge-mode-badges">
+              <span class="badge-mode active">🚀 5s Fast Relay</span>
+              <span class="badge-mode">🛡️ 100% Non-Custodial</span>
+            </div>
+          </div>
+
+          <!-- FROM CHAIN CONTAINER -->
+          <div class="chain-select-box">
+            <div class="select-header">
+              <span>SOURCE CHAIN (FROM)</span>
+              <span class="chain-bal" id="fromChainBalance">Balance: 0.0000 ETH</span>
+            </div>
+            <div class="chain-row">
+              <div class="chain-dropdown-trigger" id="fromChainTrigger">
+                <span class="chain-large-icon" id="fromChainIcon">🔷</span>
+                <div>
+                  <strong id="fromChainName">Ethereum Sepolia</strong>
+                  <small id="fromChainType">L1 Settlement Layer</small>
+                </div>
+              </div>
+              <div class="amount-input-wrapper">
+                <input type="number" id="bridgeAmount" placeholder="0.0" step="0.001" min="0.0001" value="0.01">
+                <button id="btnMaxAmount" class="btn-max">MAX</button>
+                <span class="token-ticker" id="bridgeTokenSymbol">ETH</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- DIRECTION SWAP BUTTON -->
+          <div class="direction-swap-wrapper">
+            <button id="btnSwapDirection" class="btn-direction-swap" title="Swap Source and Destination">
+              <span class="swap-icon">⇅</span>
+            </button>
+          </div>
+
+          <!-- TO CHAIN CONTAINER -->
+          <div class="chain-select-box">
+            <div class="select-header">
+              <span>DESTINATION CHAIN (TO)</span>
+              <span class="chain-bal" id="toChainBalance">Balance: 0.0000 ETH</span>
+            </div>
+            <div class="chain-row">
+              <div class="chain-dropdown-trigger" id="toChainTrigger">
+                <span class="chain-large-icon" id="toChainIcon">🏛️</span>
+                <div>
+                  <strong id="toChainName">GIWA Sepolia (Dunamu L2)</strong>
+                  <small id="toChainType">Lock & Mint Portal</small>
+                </div>
+              </div>
+              <div class="amount-receive-wrapper">
+                <div class="receive-val" id="receiveAmount">0.0099</div>
+                <span class="token-ticker" id="receiveTokenSymbol">ETH</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- QUICK DESTINATION BUTTONS -->
+          <div class="quick-destination-bar">
+            <span>Quick Destination:</span>
+            <button class="dest-chip active" data-dest="giwa">🏛️ GIWA (Dunamu)</button>
+            <button class="dest-chip" data-dest="ink">🦑 INK (Kraken)</button>
+            <button class="dest-chip" data-dest="arc">🔘 ARC (Circle)</button>
+            <button class="dest-chip" data-dest="sepolia">🔷 Sepolia (L1)</button>
+          </div>
+
+          <!-- ROUTE & FEE TRANSPARENCY BREAKDOWN -->
+          <div class="route-breakdown-box">
+            <div class="breakdown-row">
+              <span>Protocol Route</span>
+              <span class="badge-route" id="routeMechanismBadge">OP Stack Native Lock & Mint</span>
+            </div>
+            <div class="breakdown-row">
+              <span>Estimated Transfer Time</span>
+              <strong class="green-text">⚡ ~5 Seconds (Instant Finality)</strong>
+            </div>
+            <div class="breakdown-row">
+              <span>Protocol Fee (0.1%)</span>
+              <span id="feeDisplay">0.000010 ETH ($0.025) → <small class="gold-text">Treasury Route</small></span>
+            </div>
+            <div class="breakdown-row">
+              <span>Estimated Network Gas</span>
+              <span id="gasDisplay">~0.00012 ETH ($0.30)</span>
+            </div>
+            <div class="breakdown-row">
+              <span>Minimum Guaranteed Received</span>
+              <strong id="minReceivedDisplay" class="green-text">0.0099 ETH</strong>
+            </div>
+          </div>
+
+          <!-- EXECUTE BUTTON -->
+          <button id="btnExecuteBridge" class="btn-bridge-now">
+            🚀 Teleport Assets Now (5s Instant)
+          </button>
+        </div>
+
+        <!-- Right Side Live Relayer & Ecosystem Status -->
+        <div class="bridge-side-panel">
+          <!-- Live Chain Status Widget -->
+          <div class="liquidity-widget glass-panel">
+            <h3>🌐 Live Relayer Status</h3>
+            <div class="chain-status-list">
+              <div class="status-item">
+                <div class="status-left">
+                  <span class="status-icon">🏛️</span>
+                  <div>
+                    <strong>GIWA Sepolia</strong>
+                    <small>Dunamu $1.2B OP Rollup</small>
+                  </div>
+                </div>
+                <div class="status-right">
+                  <span class="pill-green">🟢 Active</span>
+                  <span class="vol-text">Gas: 0.01 Gwei</span>
+                </div>
+              </div>
+
+              <div class="status-item">
+                <div class="status-left">
+                  <span class="status-icon">🦑</span>
+                  <div>
+                    <strong>INK Sepolia</strong>
+                    <small>Kraken Superchain L2</small>
+                  </div>
+                </div>
+                <div class="status-right">
+                  <span class="pill-green">🟢 Active</span>
+                  <span class="vol-text">Gas: 0.02 Gwei</span>
+                </div>
+              </div>
+
+              <div class="status-item">
+                <div class="status-left">
+                  <span class="status-icon">🔘</span>
+                  <div>
+                    <strong>ARC Testnet</strong>
+                    <small>Circle CCTP (Burn & Mint)</small>
+                  </div>
+                </div>
+                <div class="status-right">
+                  <span class="pill-green">🟢 Active</span>
+                  <span class="vol-text">Gas: 0.01 USDC</span>
+                </div>
+              </div>
+
+              <div class="status-item">
+                <div class="status-left">
+                  <span class="status-icon">🔷</span>
+                  <div>
+                    <strong>Ethereum Sepolia</strong>
+                    <small>L1 Primary Root Anchor</small>
+                  </div>
+                </div>
+                <div class="status-right">
+                  <span class="pill-green">🟢 Active</span>
+                  <span class="vol-text">Gas: 0.5 Gwei</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fee Treasury Tracker Card -->
+          <div class="fee-earning-card glass-panel">
+            <div class="fee-badge">💰 Protocol Treasury Settlement</div>
+            <div class="fee-content">
+              <small>Fee Collector Address (Treasury)</small>
+              <code id="treasuryAddrDisplay">0x71C8360537ad1EF91e42860F5F6A889417f7b1B3</code>
+              <div class="fee-stats-row">
+                <div>
+                  <span>Today's Protocol Fees</span>
+                  <strong class="green-text" id="todayFees">0.042 ETH</strong>
+                </div>
+                <div>
+                  <span>Total Bridge Volume</span>
+                  <strong class="blue-text" id="totalVolume">$128,450</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. AUTO-BRIDGE BOT TAB -->
+    <section id="tab-autofarm" class="tab-pane">
+      <div class="autofarm-container">
+        <div class="section-header">
+          <h2>🤖 Automated Multi-Chain Bridge Farmer Bot</h2>
+          <p>Schedule autonomous cross-chain interactions to maximize airdrop tiers and developer activity scores.</p>
+        </div>
+
+        <div class="farm-grid">
+          <div class="farm-config-card glass-panel">
+            <h3>⚙️ Bot Configuration</h3>
+            
+            <div class="form-group">
+              <label>Target Networks (Multi-select)</label>
+              <div class="chain-checkbox-grid">
+                <label class="chk-card active">
+                  <input type="checkbox" id="chkGiwa" checked>
+                  <span>🏛️ GIWA (Dunamu)</span>
+                </label>
+                <label class="chk-card active">
+                  <input type="checkbox" id="chkInk" checked>
+                  <span>🦑 INK (Kraken)</span>
+                </label>
+                <label class="chk-card active">
+                  <input type="checkbox" id="chkArc" checked>
+                  <span>🔘 ARC (Circle)</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Target Iterations (Total TXs)</label>
+                <input type="number" id="botTxCount" value="5" min="1" max="50">
+              </div>
+              <div class="form-group">
+                <label>Amount Per Transaction</label>
+                <input type="number" id="botTxAmount" value="0.001" step="0.0005">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Execution Interval</label>
+              <select id="botInterval" class="chain-dropdown" style="width: 100%;">
+                <option value="10">⚡ 10 Seconds (Ultra-Fast Test)</option>
+                <option value="60">🕒 1 Minute (Standard Bot)</option>
+                <option value="300">🛡️ 5 Minutes (Anti-Sybil Stealth)</option>
+              </select>
+            </div>
+
+            <button id="btnStartAutoBot" class="btn-action-lg btn-gradient">
+              🚀 Launch Autonomous Bridge Bot
+            </button>
+          </div>
+
+          <!-- Live Bot Terminal Console -->
+          <div class="farm-console-card glass-panel">
+            <div class="console-header">
+              <h3>📡 Live Execution Terminal</h3>
+              <span class="badge-live" id="botStatusBadge">IDLE (Standby)</span>
+            </div>
+            <div class="terminal-screen" id="botConsole">
+              <div class="log-line text-muted">[System] Autonomous Cross-Chain Bot initialized.</div>
+              <div class="log-line text-muted">[Config] Active Target Matrix: GIWA Sepolia, INK Sepolia, ARC Testnet</div>
+              <div class="log-line text-muted">[Ready] Click 'Launch' to initiate automated bridging sequences.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. HISTORY TRACKER TAB -->
+    <section id="tab-history" class="tab-pane">
+      <div class="history-container glass-panel">
+        <div class="history-header-flex">
+          <div>
+            <h2>📜 Global Cross-Chain Transaction Ledger</h2>
+            <p>Immutable audit trail of all bridge interactions with verifiable blockchain explorer proofs.</p>
+          </div>
+          <button id="btnClearHistory" class="btn-sm btn-outline">Clear Ledger</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Cross-Chain Route</th>
+                <th>Transferred Amount</th>
+                <th>Protocol Fee (0.1%)</th>
+                <th>Relay Status</th>
+                <th>Explorer Verification</th>
+              </tr>
+            </thead>
+            <tbody id="globalHistoryBody">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. ANALYTICS & ARCHITECTURE TAB -->
+    <section id="tab-analytics" class="tab-pane">
+      <div class="analytics-container">
+        <div class="section-header">
+          <h2>📊 Protocol Metrics & Architecture</h2>
+          <p>Real-time analytics on processed volume, treasury accruals, and underlying bridging protocols.</p>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card glass-panel">
+            <div class="metric-icon">💰</div>
+            <div class="metric-data">
+              <small>Total Protocol Revenue</small>
+              <strong class="green-text">0.185 ETH ($462)</strong>
+              <span>Direct Treasury Deposit</span>
+            </div>
+          </div>
+          <div class="metric-card glass-panel">
+            <div class="metric-icon">🚀</div>
+            <div class="metric-data">
+              <small>Total Bridges Relayed</small>
+              <strong class="blue-text" id="analyticsTotalCount">185 TXs</strong>
+              <span>100% Success Rate</span>
+            </div>
+          </div>
+          <div class="metric-card glass-panel">
+            <div class="metric-icon">🌐</div>
+            <div class="metric-data">
+              <small>Supported Networks</small>
+              <strong>4 Chains</strong>
+              <span>Sepolia · GIWA · INK · ARC</span>
+            </div>
+          </div>
+          <div class="metric-card glass-panel">
+            <div class="metric-icon">⚡</div>
+            <div class="metric-data">
+              <small>Average Relay Finality</small>
+              <strong class="green-text">4.8 Seconds</strong>
+              <span>Fast-Path Liquidity Relay</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Architecture Deep Dive -->
+        <div class="architecture-box glass-panel">
+          <h3>🏗️ Cross-Chain Protocol Mechanics</h3>
+          <div class="arch-grid">
+            <div class="arch-card">
+              <h4>🏛️ GIWA & INK (OP Stack)</h4>
+              <p>Utilizes the official <strong>Lock & Mint</strong> model. L1 ETH is locked securely in the bridge vault, and the L2 sequencer mints native L2 ETH 1:1 with zero slippage.</p>
+            </div>
+            <div class="arch-card">
+              <h4>🔘 ARC (Circle CCTP)</h4>
+              <p>Utilizes Circle's <strong>Burn & Mint</strong> protocol. USDC is burned on the source chain and minted natively on ARC as canonical gas token with 0% vault risk.</p>
+            </div>
+            <div class="arch-card">
+              <h4>⚡ 5-Second Fast Relayer</h4>
+              <p>Our instant relayer mesh front-runs native rollup delays, providing immediate 5-second transfers directly between L2s without passing back through L1.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Legal & Compliance Footer -->
+  <footer class="app-footer">
+    <div class="footer-content">
+      <div class="footer-left">
+        <strong>TRINITY BRIDGE</strong> — Unified Cross-Chain Liquidity Mesh
+        <p>Non-custodial, permissionless DeFi infrastructure connecting Ethereum L1, GIWA, INK, and ARC.</p>
+      </div>
+      <div class="footer-right">
+        <span class="legal-disclaimer">
+          ⚠️ <strong>Disclaimer:</strong> Trinity Bridge is a decentralized, non-custodial interface. We do not hold user private keys or custody assets. All operations route through public smart contract protocols.
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Notification Toast -->
+  <div id="toastNotification" class="toast hidden">
+    <div class="toast-icon" id="toastIcon">🎉</div>
+    <div class="toast-message" id="toastMessage">Transaction broadcasted successfully.</div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

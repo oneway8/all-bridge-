@@ -1,0 +1,9 @@
+{
+  "name": "trinity-bridge-memeforge",
+  "version": "1.0.0",
+  "description": "ARC · INK · GIWA Unified Bridge & Meme Launchpad DApp",
+  "scripts": {
+    "start": "python3 -m http.server 8088"
+  },
+  "keywords": ["web3", "bridge", "memeforge", "giwa", "ink", "arc", "airdrop"]
+}
