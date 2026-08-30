@@ -853,3 +853,143 @@ body {
   padding: 3px;
   border-radius: 8px;
 }
+
+/* WalletConnect Modal Styles */
+.wc-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #1E2333;
+  border: 1px solid rgba(59, 153, 252, 0.4);
+  transition: all 0.2s ease;
+}
+
+.wc-btn:hover {
+  background: #252D42;
+  border-color: #3B99FC;
+  box-shadow: 0 0 16px rgba(59, 153, 252, 0.25);
+}
+
+.wc-modal-box {
+  max-width: 380px;
+  background: #141724;
+  border: 1px solid #23293D;
+  text-align: center;
+}
+
+.wc-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.wc-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wc-brand h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.wc-brand small {
+  color: #8E98B0;
+  font-size: 0.75rem;
+}
+
+.wc-qr-card {
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 20px;
+  margin: 0 auto 16px auto;
+  width: 250px;
+  height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.wc-qr-canvas img, .wc-qr-canvas canvas {
+  width: 210px !important;
+  height: 210px !important;
+  display: block;
+}
+
+.wc-qr-badge {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  background: #FFFFFF;
+  border: 2px solid #3B99FC;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.wc-actions-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.wc-action-btn {
+  background: #1C2130;
+  border: 1px solid #283046;
+  color: #E2E8F0;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wc-action-btn:hover {
+  background: #272F44;
+  border-color: #3B99FC;
+  color: #fff;
+}
+
+.wc-wallet-chips {
+  border-top: 1px solid #1E2333;
+  padding-top: 14px;
+}
+
+.wc-chips-title {
+  display: block;
+  font-size: 0.72rem;
+  color: #64748B;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wc-supported-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.wc-pill {
+  background: #0E1018;
+  border: 1px solid #1A1F2C;
+  color: #94A3B8;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+}

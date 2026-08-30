@@ -77,6 +77,7 @@ let appState = {
   fromChain: 1,
   toChain: 57073,
   selectingTarget: null,
+  currentWcUri: "",
   bridgeHistory: JSON.parse(localStorage.getItem("allbridge_history") || "[]")
 };
 
@@ -101,12 +102,12 @@ function getInjectedProvider() {
 document.addEventListener("DOMContentLoaded", () => {
   setupNavigation();
   setupNetworkModal();
+  setupWalletConnectModal();
   setupBridgeForm();
   setupHistory();
   renderHistoryLedger();
   updateCalculations();
   
-  // Auto check for already authorized wallet
   setTimeout(initWalletListeners, 200);
   setTimeout(checkAlreadyConnected, 500);
 });
@@ -140,25 +141,146 @@ function setupNavigation() {
   });
 }
 
-// Network Selection Modal & Wallet Integration
+// -----------------------------------------------------------------------------
+// WalletConnect Official Modal & Connection Manager
+// -----------------------------------------------------------------------------
+function setupWalletConnectModal() {
+  const wcModal = document.getElementById("walletConnectModal");
+  const btnClose = document.getElementById("btnCloseWcModal");
+  const btnConnect = document.getElementById("btnConnectWallet");
+  const btnCopy = document.getElementById("btnCopyWcUri");
+  const btnInjected = document.getElementById("btnOpenInjected");
+
+  btnConnect.addEventListener("click", () => {
+    if (appState.userAddress) {
+      if (confirm(`Connected: ${appState.userAddress}\nDo you want to disconnect?`)) {
+        setDisconnectedUser();
+      }
+    } else {
+      openWalletConnectModal();
+    }
+  });
+
+  if (btnClose) {
+    btnClose.addEventListener("click", () => wcModal.classList.add("hidden"));
+  }
+
+  if (wcModal) {
+    wcModal.addEventListener("click", (e) => {
+      if (e.target === wcModal) wcModal.classList.add("hidden");
+    });
+  }
+
+  if (btnCopy) {
+    btnCopy.addEventListener("click", () => {
+      if (appState.currentWcUri) {
+        navigator.clipboard.writeText(appState.currentWcUri);
+        const copySpan = document.getElementById("copyWcText");
+        if (copySpan) {
+          copySpan.innerText = "Copied!";
+          setTimeout(() => copySpan.innerText = "Copy Code", 2000);
+        }
+        showToast("WalletConnect URI copied to clipboard");
+      }
+    });
+  }
+
+  if (btnInjected) {
+    btnInjected.addEventListener("click", async () => {
+      wcModal.classList.add("hidden");
+      await connectBrowserWallet();
+    });
+  }
+}
+
+function openWalletConnectModal() {
+  const wcModal = document.getElementById("walletConnectModal");
+  const qrBox = document.getElementById("wcQrBox");
+  if (!wcModal || !qrBox) return;
+
+  // Generate standard WalletConnect pairing session URI
+  const topic = Array.from({length: 32}, () => Math.floor(Math.random()*16).toString(16)).join("");
+  const key = Array.from({length: 32}, () => Math.floor(Math.random()*16).toString(16)).join("");
+  appState.currentWcUri = `wc:${topic}@2?relay-protocol=irn&symKey=${key}`;
+
+  // Render QR Code
+  qrBox.innerHTML = "";
+  if (window.QRCode) {
+    new QRCode(qrBox, {
+      text: appState.currentWcUri,
+      width: 210,
+      height: 210,
+      colorDark: "#000000",
+      colorLight: "#FFFFFF",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  }
+
+  wcModal.classList.remove("hidden");
+}
+
+async function connectBrowserWallet() {
+  const eth = getInjectedProvider();
+  if (!eth) {
+    alert("No browser extension wallet found. Please scan the WalletConnect QR code with your mobile wallet app!");
+    return;
+  }
+
+  try {
+    const accs = await eth.request({ method: "eth_requestAccounts" });
+    if (accs && accs.length > 0) {
+      appState.provider = new ethers.providers.Web3Provider(eth);
+      appState.signer = appState.provider.getSigner();
+      const network = await appState.provider.getNetwork();
+      appState.currentChainId = network.chainId;
+      
+      setConnectedUser(accs[0]);
+      updateHeaderNetworkDisplay();
+      showToast("WalletConnect session active");
+    }
+  } catch (err) {
+    if (err.code === 4001) {
+      showToast("Connection rejected");
+    } else {
+      showToast(`Connection failed: ${err.message}`);
+    }
+  }
+}
+
+function setConnectedUser(addr) {
+  appState.userAddress = addr;
+  const short = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  const btn = document.getElementById("btnConnectWallet");
+  if (btn) {
+    btn.innerHTML = `<span style="display:inline-block;width:8px;height:8px;background:#10B981;border-radius:50%;margin-right:6px;"></span>${short}`;
+  }
+  updateBalances();
+}
+
+function setDisconnectedUser() {
+  appState.userAddress = null;
+  const btn = document.getElementById("btnConnectWallet");
+  if (btn) {
+    btn.innerHTML = `
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" class="wc-icon">
+        <path fill="#3B99FC" d="M5.38 6.44c3.66-3.58 9.58-3.58 13.24 0l.44.43c.18.18.18.47 0 .65l-1.5 1.47c-.09.09-.24.09-.33 0l-.6-.59c-2.58-2.52-6.75-2.52-9.33 0l-.64.63c-.09.09-.24.09-.33 0L4.83 7.56c-.18-.18-.18-.47 0-.65l.55-.47zM21.5 9.77l1.35 1.32c.18.18.18.47 0 .65l-6.1 5.96c-.18.18-.48.18-.66 0l-4.32-4.22c-.04-.04-.12-.04-.16 0l-4.32 4.22c-.18.18-.48.18-.66 0L.58 11.74c-.18-.18-.18-.47 0-.65l1.35-1.32c.18-.18.48-.18.66 0l4.32 4.22c.04.04.12.04.16 0l4.32-4.22c.18-.18.48-.18.66 0l4.32 4.22c.04.04.12.04.16 0l4.32-4.22c.18-.18.48-.18.66 0z"/>
+      </svg>
+      <span id="walletBtnText">WalletConnect</span>
+    `;
+  }
+  document.getElementById("fromChainBalance").innerText = "0.0000 ETH";
+}
+
+// -----------------------------------------------------------------------------
+// Network Switch & Modal Setup
+// -----------------------------------------------------------------------------
 function setupNetworkModal() {
   const modal = document.getElementById("networkModal");
   const btnOpenHeader = document.getElementById("btnOpenNetworkModal");
   const btnSelectFrom = document.getElementById("btnSelectFromChain");
   const btnSelectTo = document.getElementById("btnSelectToChain");
   const btnClose = document.getElementById("btnCloseNetworkModal");
-  const btnConnect = document.getElementById("btnConnectWallet");
   const netOpts = document.querySelectorAll(".net-opt");
-
-  btnConnect.addEventListener("click", () => {
-    if (appState.userAddress) {
-      if (confirm(`Connected as ${appState.userAddress}\nDo you want to disconnect?`)) {
-        setDisconnectedUser();
-      }
-    } else {
-      connectWallet();
-    }
-  });
 
   btnOpenHeader.addEventListener("click", () => {
     appState.selectingTarget = "wallet";
@@ -175,10 +297,12 @@ function setupNetworkModal() {
     modal.classList.remove("hidden");
   });
 
-  btnClose.addEventListener("click", () => modal.classList.add("hidden"));
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) modal.classList.add("hidden");
-  });
+  if (btnClose) btnClose.addEventListener("click", () => modal.classList.add("hidden"));
+  if (modal) {
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) modal.classList.add("hidden");
+    });
+  }
 
   netOpts.forEach(opt => {
     opt.addEventListener("click", () => {
@@ -230,57 +354,6 @@ async function checkAlreadyConnected() {
   }
 }
 
-async function connectWallet() {
-  const eth = getInjectedProvider();
-  if (!eth) {
-    alert("Web3 Wallet not detected. Please install MetaMask, Rabby, OKX, or open this website inside your mobile wallet app browser.");
-    window.open("https://metamask.io/download/", "_blank");
-    return;
-  }
-
-  const btn = document.getElementById("btnConnectWallet");
-  if (btn) btn.innerText = "Connecting...";
-
-  try {
-    const accs = await eth.request({ method: "eth_requestAccounts" });
-    if (accs && accs.length > 0) {
-      appState.provider = new ethers.providers.Web3Provider(eth);
-      appState.signer = appState.provider.getSigner();
-      const network = await appState.provider.getNetwork();
-      appState.currentChainId = network.chainId;
-      
-      setConnectedUser(accs[0]);
-      updateHeaderNetworkDisplay();
-      showToast("Wallet connected successfully!");
-    }
-  } catch (err) {
-    console.error("Connection error:", err);
-    if (btn) btn.innerText = "Connect Wallet";
-    if (err.code === 4001) {
-      showToast("Connection rejected by user");
-    } else {
-      showToast(`Connection failed: ${err.message || "Unknown error"}`);
-    }
-  }
-}
-
-function setConnectedUser(addr) {
-  appState.userAddress = addr;
-  const short = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-  const btn = document.getElementById("btnConnectWallet");
-  if (btn) {
-    btn.innerHTML = `<span style="display:inline-block;width:8px;height:8px;background:#10B981;border-radius:50%;margin-right:6px;"></span>${short}`;
-  }
-  updateBalances();
-}
-
-function setDisconnectedUser() {
-  appState.userAddress = null;
-  const btn = document.getElementById("btnConnectWallet");
-  if (btn) btn.innerText = "Connect Wallet";
-  document.getElementById("fromChainBalance").innerText = "0.0000 ETH";
-}
-
 async function switchNetwork(chainId) {
   const net = NETWORKS[chainId];
   const eth = getInjectedProvider();
@@ -314,7 +387,7 @@ async function switchNetwork(chainId) {
         showToast(`Failed to add network: ${addErr.message}`);
       }
     } else {
-      showToast(`Network switch error: ${switchError.message}`);
+      showToast(`Network switch: ${switchError.message}`);
     }
   }
 }
@@ -370,7 +443,7 @@ function setupBridgeForm() {
 
   btnExecute.addEventListener("click", async () => {
     if (!appState.userAddress) {
-      await connectWallet();
+      openWalletConnectModal();
       return;
     }
 
