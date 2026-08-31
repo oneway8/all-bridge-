@@ -118,13 +118,14 @@ async function processDeposit(sourceName, tx) {
 
 async function watchBaseDeposits() {
   const base = SOURCE_NETWORKS.base;
-  let lastCheckedBlock = await base.provider.getBlockNumber();
-  console.log(`👀 Watching ${base.name} starting from block #${lastCheckedBlock}...`);
+  const currentBlock = await base.provider.getBlockNumber();
+  let lastCheckedBlock = Math.max(0, currentBlock - 50); // Look back 50 blocks on startup to ensure zero missed txs
+  console.log(`👀 Watching ${base.name} starting with buffer from block #${lastCheckedBlock} (Head: #${currentBlock})...`);
 
   setInterval(async () => {
     try {
-      const currentBlock = await base.provider.getBlockNumber();
-      while (lastCheckedBlock < currentBlock) {
+      const latest = await base.provider.getBlockNumber();
+      while (lastCheckedBlock < latest) {
         lastCheckedBlock++;
         const block = await base.provider.getBlock(lastCheckedBlock, true);
         if (block && block.prefetchedTransactions) {
