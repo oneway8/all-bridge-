@@ -591,20 +591,14 @@ async function handleBridgeExecution() {
     }
 
     // 2. Obtain Web3 Signer & Execute Real Transaction
-    // Use our configured RPC for the selected chain, with wallet as signer
-    const selectedRpc = NETWORKS[appState.fromChain].rpcUrls[0];
-    const jsonRpcProvider = new ethers.providers.JsonRpcProvider(selectedRpc);
     const provider = new ethers.providers.Web3Provider(walletConnectProvider, "any");
     const signer = provider.getSigner();
-
-    // Override signer's provider to use our RPC for balance/nonce queries
-    const signerWithRpc = signer.connect(jsonRpcProvider.getSigner());
 
     let txHash = "";
 
     try {
       // Send on-chain transaction prompt directly to the connected wallet
-      const tx = await provider.getSigner().sendTransaction({
+      const tx = await signer.sendTransaction({
         to: PROTOCOL_CONFIG.routerAddress,
         value: amountWei
       });
