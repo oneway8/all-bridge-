@@ -38,7 +38,7 @@ const NETWORKS = {
     shortName: "Ethereum",
     type: "L1 Settlement Anchor",
     mechanism: "Ethereum L1 Proof-of-Stake",
-    rpcUrls: ["https://eth.llamarpc.com", "https://cloudflare-eth.com", "https://rpc.ankr.com/eth"],
+    rpcUrls: ["https://cloudflare-eth.com", "https://ethereum-rpc.publicnode.com", "https://rpc.ankr.com/eth"],
     explorer: "https://etherscan.io",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
     iconKey: "eth",
@@ -50,7 +50,7 @@ const NETWORKS = {
     shortName: "Base",
     type: "Coinbase OP Stack L2",
     mechanism: "OP Stack Canonical Bridge / Across",
-    rpcUrls: ["https://mainnet.base.org", "https://base.llamarpc.com", "https://1rpc.io/base"],
+    rpcUrls: ["https://mainnet.base.org", "https://base-rpc.publicnode.com", "https://1rpc.io/base"],
     explorer: "https://basescan.org",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
     iconKey: "base",
@@ -97,7 +97,7 @@ const NETWORKS = {
 const SUPPORTED_CHAIN_IDS = [1, 8453, 57073, 91342, 5042002];
 
 const WALLETCONNECT_RPC_MAP = Object.freeze({
-  1: "https://eth.llamarpc.com",
+  1: "https://cloudflare-eth.com",
   8453: "https://mainnet.base.org",
   57073: "https://rpc-gel.inkonchain.com",
   91342: "https://sepolia-rpc.giwa.io",
