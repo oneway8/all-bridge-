@@ -1,9 +1,25 @@
 {
   "name": "all-bridge",
   "version": "1.0.0",
-  "description": "ALL BRIDGE — ARC · INK · GIWA Unified Cross-Chain Portal",
+  "description": "OmniRoute / AllBridge — Automated Cross-Chain Relayer Daemon & Portal",
+  "main": "relayer.js",
   "scripts": {
-    "start": "python3 -m http.server 8088"
+    "start": "node relayer.js",
+    "relayer": "node relayer.js",
+    "dev": "node relayer.js"
   },
-  "keywords": ["web3", "bridge", "memeforge", "giwa", "ink", "arc", "airdrop"]
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.2"
+  },
+  "keywords": [
+    "web3",
+    "bridge",
+    "omniroute",
+    "allbridge",
+    "ink",
+    "arc",
+    "base",
+    "ethereum"
+  ]
 }
