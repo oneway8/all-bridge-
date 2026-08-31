@@ -1,18 +1,27 @@
 /**
- * AllBridge Protocol — Production Hardened Cross-Chain Liquidity Engine
- * Audited & Patched Architecture v3.0.0
+ * AllBridge Protocol — Official WalletConnect v2 Integration
+ * Version: 4.0.0
  */
 
-"use strict";
+import EthereumProvider from "https://esm.sh/@walletconnect/ethereum-provider@2.21.6";
 
-// Protocol Treasury & Bridge Configuration
+const ethers = window.ethers;
+if (!ethers) {
+  throw new Error("Ethers.js failed to load");
+}
+
+// -----------------------------------------------------------------------------
+// Protocol & WalletConnect Configuration
+// -----------------------------------------------------------------------------
+// WalletConnect Cloud Project ID (Public App Identifier)
+const WALLETCONNECT_PROJECT_ID = "3a8170812b534d0ff9d794f19a901d64";
+
 const PROTOCOL_CONFIG = Object.freeze({
   feePercent: 0.1,
   defaultFromChain: 1,
   defaultToChain: 57073
 });
 
-// Official Chain Logos
 const CHAIN_ICONS = Object.freeze({
   eth: `<img src="assets/ethereum.png" alt="Ethereum" width="28" height="28" class="chain-img">`,
   ink: `<img src="assets/ink.png" alt="INK" width="28" height="28" class="chain-img">`,
@@ -20,7 +29,6 @@ const CHAIN_ICONS = Object.freeze({
   arc: `<img src="assets/arc.svg" alt="ARC" width="28" height="28" class="chain-img arc-img">`
 });
 
-// Supported Networks Matrix
 const NETWORKS = Object.freeze({
   1: {
     chainIdHex: "0x1",
@@ -72,31 +80,30 @@ const NETWORKS = Object.freeze({
   }
 });
 
-// Canonical Bridge Contracts Matrix (Configured for Safe Routing)
-const BRIDGE_CONFIG = Object.freeze({
-  1: {
-    name: "Ethereum L1 Standard Bridge Portal",
-    configured: false // Will be set to true once mainnet bridge contract addresses are deployed & verified
-  },
-  57073: {
-    name: "INK OP Stack Portal",
-    configured: false
-  },
-  91342: {
-    name: "GIWA OP Rollup Portal",
-    configured: false
-  },
-  5042002: {
-    name: "Circle CCTP Token Messenger",
-    configured: false
-  }
+const SUPPORTED_CHAIN_IDS = [1, 57073, 91342, 5042002];
+
+const WALLETCONNECT_RPC_MAP = Object.freeze({
+  1: "https://eth.llamarpc.com",
+  57073: "https://rpc-gel.inkonchain.com",
+  91342: "https://sepolia-rpc.giwa.io",
+  5042002: "https://rpc.testnet.arc.network"
 });
 
-// Global Connection In-Flight State & Mutex
-let connectInFlight = null;
-let connectAttemptId = 0;
+// Canonical Bridge Router Contract Status
+const BRIDGE_CONFIG = Object.freeze({
+  1: { configured: false },
+  57073: { configured: false },
+  91342: { configured: false },
+  5042002: { configured: false }
+});
 
-// Application State
+// -----------------------------------------------------------------------------
+// Application State & Provider References
+// -----------------------------------------------------------------------------
+let walletConnectProvider = null;
+let walletConnectInitPromise = null;
+let connectInFlight = null;
+
 const appState = {
   currentChainId: 1,
   userAddress: null,
@@ -108,168 +115,60 @@ const appState = {
   bridgeHistory: loadHistory()
 };
 
-// Safe LocalStorage History Loader
 function loadHistory() {
   try {
     const raw = localStorage.getItem("allbridge_history");
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.slice(0, 50) : [];
-  } catch (err) {
-    console.warn("Invalid history data:", err);
-    try { localStorage.removeItem("allbridge_history"); } catch (_) {}
+  } catch {
+    localStorage.removeItem("allbridge_history");
     return [];
   }
 }
 
-// -----------------------------------------------------------------------------
-// Provider Resolution (Wallet-Specific Dispatching)
-// -----------------------------------------------------------------------------
-function getInjectedProvider(walletType = "auto") {
-  if (typeof window === "undefined") return null;
-
-  const providers = Array.isArray(window.ethereum?.providers)
-    ? window.ethereum.providers
-    : window.ethereum
-      ? [window.ethereum]
-      : [];
-
-  if (walletType === "metamask") {
-    return providers.find(p => p.isMetaMask && !p.isRabby && !p.isOkxWallet) || window.ethereum || null;
-  }
-
-  if (walletType === "coinbase") {
-    return providers.find(p => p.isCoinbaseWallet)
-      || window.coinbaseWalletExtension
-      || null;
-  }
-
-  if (walletType === "okx") {
-    return providers.find(p => p.isOkxWallet || p.isOKExWallet)
-      || window.okxwallet
-      || null;
-  }
-
-  if (walletType === "rabby") {
-    return providers.find(p => p.isRabby)
-      || window.rabby
-      || null;
-  }
-
-  return providers[0]
-    || window.okxwallet
-    || window.rabby
-    || window.coinbaseWalletExtension
-    || null;
+function shortAddress(address) {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-async function getConnectedChainId(provider) {
-  if (!provider || !provider.request) return 1;
-  try {
-    const chainIdHex = await provider.request({ method: "eth_chainId" });
-    return Number.parseInt(chainIdHex, 16);
-  } catch (err) {
-    console.warn("Failed to fetch eth_chainId:", err);
-    return 1;
-  }
+function showToast(message) {
+  const toast = document.getElementById("toastNotification");
+  const msgEl = document.getElementById("toastMessage");
+  if (!toast || !msgEl) return;
+
+  msgEl.textContent = message;
+  toast.classList.remove("hidden");
+
+  if (toast.dismissTimer) clearTimeout(toast.dismissTimer);
+  toast.dismissTimer = setTimeout(() => {
+    toast.classList.add("hidden");
+  }, 4000);
 }
 
-// Promise Timeout Helper
-function withTimeout(promise, ms) {
-  let timer;
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => {
-      reject(new Error("Wallet request timed out"));
-    }, ms);
-  });
+function setButtonConnecting(isConnecting) {
+  const button = document.getElementById("btnConnectWallet");
+  if (!button) return;
 
-  return Promise.race([promise, timeout])
-    .finally(() => clearTimeout(timer));
-}
-
-// -----------------------------------------------------------------------------
-// Wallet Connection (Non-Hanging, In-Flight Guarded)
-// -----------------------------------------------------------------------------
-async function connectBrowserWallet(walletType = "auto") {
-  if (connectInFlight) {
-    showToast("A wallet connection is already in progress. Please check your wallet popup.");
-    return connectInFlight;
+  button.disabled = isConnecting;
+  button.setAttribute("aria-busy", String(isConnecting));
+  if (isConnecting) {
+    button.innerHTML = "<span>Connecting...</span>";
   }
-
-  const eth = getInjectedProvider(walletType);
-  if (!eth) {
-    showToast("Compatible Web3 wallet extension not found. Please install MetaMask.");
-    window.open("https://metamask.io/download/", "_blank");
-    return;
-  }
-
-  const attemptId = ++connectAttemptId;
-  const btn = document.getElementById("btnConnectWallet");
-
-  if (btn) {
-    btn.disabled = true;
-    btn.setAttribute("aria-busy", "true");
-    btn.innerHTML = "<span>Connecting...</span>";
-  }
-
-  connectInFlight = (async () => {
-    try {
-      const accounts = await withTimeout(
-        eth.request({ method: "eth_requestAccounts" }),
-        30000
-      );
-
-      if (attemptId !== connectAttemptId) return;
-
-      if (!Array.isArray(accounts) || accounts.length === 0) {
-        throw new Error("No wallet account returned");
-      }
-
-      const address = ethers.utils.getAddress(accounts[0]);
-      const provider = new ethers.providers.Web3Provider(eth, "any");
-
-      appState.provider = provider;
-      appState.signer = provider.getSigner();
-      appState.currentChainId = await getConnectedChainId(eth);
-
-      setConnectedUser(address);
-      bindProviderEvents(eth);
-      updateHeaderNetworkDisplay();
-      showToast("Wallet connected successfully");
-    } catch (err) {
-      if (err.code === 4001) {
-        showToast("Connection cancelled by user");
-      } else if (err.code === -32002) {
-        showToast("Approve the pending connection request in your wallet extension");
-      } else if (err.message === "Wallet request timed out") {
-        showToast("Wallet did not respond in time. Please try again");
-      } else {
-        console.error("Wallet connection failed:", err);
-        showToast("Wallet connection failed");
-      }
-
-      if (attemptId === connectAttemptId) {
-        setDisconnectedUser();
-      }
-    } finally {
-      if (attemptId === connectAttemptId && btn) {
-        btn.disabled = false;
-        btn.removeAttribute("aria-busy");
-      }
-      connectInFlight = null;
-    }
-  })();
-
-  return connectInFlight;
 }
 
 function setConnectedUser(address) {
-  if (!address) return;
-  appState.userAddress = address;
-  const short = `${address.slice(0, 6)}...${address.slice(-4)}`;
-  const btn = document.getElementById("btnConnectWallet");
-  if (btn) {
-    btn.innerHTML = `<span style="display:inline-block;width:8px;height:8px;background:#10B981;border-radius:50%;margin-right:6px;"></span>${short}`;
+  appState.userAddress = ethers.utils.getAddress(address);
+
+  const button = document.getElementById("btnConnectWallet");
+  if (button) {
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+    button.innerHTML = `
+      <span style="display:inline-block;width:8px;height:8px;background:#10B981;border-radius:50%;margin-right:6px;"></span>
+      ${shortAddress(appState.userAddress)}
+    `;
   }
+
+  updateHeaderNetworkDisplay();
   updateBalances();
 }
 
@@ -278,202 +177,263 @@ function setDisconnectedUser() {
   appState.provider = null;
   appState.signer = null;
 
-  const btn = document.getElementById("btnConnectWallet");
-  if (btn) {
-    btn.disabled = false;
-    btn.removeAttribute("aria-busy");
-    btn.innerHTML = `
+  const button = document.getElementById("btnConnectWallet");
+  if (button) {
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+    button.innerHTML = `
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" class="wc-icon">
         <path fill="#3B99FC" d="M5.38 6.44c3.66-3.58 9.58-3.58 13.24 0l.44.43c.18.18.18.47 0 .65l-1.5 1.47c-.09.09-.24.09-.33 0l-.6-.59c-2.58-2.52-6.75-2.52-9.33 0l-.64.63c-.09.09-.24.09-.33 0L4.83 7.56c-.18-.18-.18-.47 0-.65l.55-.47zM21.5 9.77l1.35 1.32c.18.18.18.47 0 .65l-6.1 5.96c-.18.18-.48.18-.66 0l-4.32-4.22c-.04-.04-.12-.04-.16 0l-4.32 4.22c-.18.18-.48.18-.66 0L.58 11.74c-.18-.18-.18-.47 0-.65l1.35-1.32c.18-.18.48-.18.66 0l4.32 4.22c.04.04.12.04.16 0l4.32-4.22c.18-.18.48-.18.66 0l4.32 4.22c.04.04.12.04.16 0l4.32-4.22c.18-.18.48-.18.66 0z"/>
       </svg>
-      <span id="walletBtnText">Connect Wallet</span>
+      <span id="walletBtnText">WalletConnect</span>
     `;
   }
 
-  const balance = document.getElementById("fromChainBalance");
-  if (balance) {
+  const balanceEl = document.getElementById("fromChainBalance");
+  if (balanceEl) {
     const symbol = NETWORKS[appState.fromChain]?.currency.symbol || "ETH";
-    balance.textContent = `0.0000 ${symbol}`;
+    balanceEl.textContent = `0.0000 ${symbol}`;
   }
 }
 
 // -----------------------------------------------------------------------------
-// Provider Event Listeners
+// Official WalletConnect v2 Initialization & Event Binding
 // -----------------------------------------------------------------------------
-function bindProviderEvents(provider) {
-  if (!provider || !provider.on) return;
-
-  provider.removeListener?.("accountsChanged", handleAccountsChanged);
-  provider.removeListener?.("chainChanged", handleChainChanged);
-  provider.removeListener?.("disconnect", handleDisconnect);
-
-  provider.on("accountsChanged", handleAccountsChanged);
-  provider.on("chainChanged", handleChainChanged);
-  provider.on("disconnect", handleDisconnect);
-}
-
-async function handleAccountsChanged(accounts) {
-  if (!accounts || accounts.length === 0) {
-    setDisconnectedUser();
-    return;
+async function initWalletConnect() {
+  if (walletConnectProvider) {
+    return walletConnectProvider;
   }
 
-  const provider = getInjectedProvider();
+  if (walletConnectInitPromise) {
+    return walletConnectInitPromise;
+  }
+
+  walletConnectInitPromise = EthereumProvider.init({
+    projectId: WALLETCONNECT_PROJECT_ID,
+    showQrModal: true,
+    metadata: {
+      name: "AllBridge",
+      description: "AllBridge Cross-Chain Liquidity Engine",
+      url: window.location.origin,
+      icons: [`${window.location.origin}/assets/ethereum.png`]
+    },
+    chains: [1],
+    optionalChains: SUPPORTED_CHAIN_IDS,
+    rpcMap: WALLETCONNECT_RPC_MAP,
+    qrModalOptions: {
+      themeMode: "dark"
+    }
+  });
+
   try {
-    appState.userAddress = ethers.utils.getAddress(accounts[0]);
-    appState.provider = new ethers.providers.Web3Provider(provider, "any");
-    appState.signer = appState.provider.getSigner();
-    appState.currentChainId = await getConnectedChainId(provider);
+    walletConnectProvider = await walletConnectInitPromise;
+    bindWalletConnectEvents(walletConnectProvider);
+    return walletConnectProvider;
+  } catch (error) {
+    walletConnectInitPromise = null;
+    throw error;
+  }
+}
 
-    setConnectedUser(appState.userAddress);
+function bindWalletConnectEvents(provider) {
+  if (!provider || typeof provider.on !== "function") return;
+
+  provider.on("accountsChanged", async (accounts) => {
+    if (!Array.isArray(accounts) || accounts.length === 0) {
+      setDisconnectedUser();
+      return;
+    }
+    await applyWalletState(provider, accounts[0]);
+  });
+
+  provider.on("chainChanged", async (chainIdValue) => {
+    const chainId = parseChainId(chainIdValue);
+    appState.currentChainId = chainId;
     updateHeaderNetworkDisplay();
-    await updateBalances();
-  } catch (err) {
-    console.error("Account update error:", err);
+    if (appState.userAddress) {
+      await updateBalances();
+    }
+  });
+
+  provider.on("disconnect", () => {
     setDisconnectedUser();
-  }
-}
+    showToast("Wallet disconnected");
+  });
 
-async function handleChainChanged(chainIdHex) {
-  appState.currentChainId = Number.parseInt(chainIdHex, 16);
-
-  if (appState.provider) {
-    appState.signer = appState.provider.getSigner();
-  }
-
-  updateHeaderNetworkDisplay();
-  await updateBalances();
-}
-
-function handleDisconnect() {
-  setDisconnectedUser();
-}
-
-async function checkAlreadyConnected() {
-  const provider = getInjectedProvider();
-  if (!provider) return;
-
-  try {
-    const accounts = await provider.request({ method: "eth_accounts" });
-    if (accounts && accounts.length > 0) {
-      appState.userAddress = ethers.utils.getAddress(accounts[0]);
-      appState.provider = new ethers.providers.Web3Provider(provider, "any");
-      appState.signer = appState.provider.getSigner();
-      appState.currentChainId = await getConnectedChainId(provider);
-
-      setConnectedUser(appState.userAddress);
-      bindProviderEvents(provider);
-      updateHeaderNetworkDisplay();
-    }
-  } catch (err) {
-    console.debug("Silent connection check:", err);
-  }
-}
-
-// -----------------------------------------------------------------------------
-// Network Management & Chain Verification
-// -----------------------------------------------------------------------------
-async function waitForChain(expectedChainId, timeoutMs = 15000) {
-  const provider = getInjectedProvider();
-  if (!provider) throw new Error("No provider available");
-
-  const expectedHex = NETWORKS[expectedChainId].chainIdHex.toLowerCase();
-  const current = await provider.request({ method: "eth_chainId" });
-
-  if (String(current).toLowerCase() === expectedHex) {
-    return;
-  }
-
-  await new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      provider.removeListener?.("chainChanged", onChanged);
-      reject(new Error("Network switch confirmation timed out"));
-    }, timeoutMs);
-
-    function onChanged(chainIdHex) {
-      if (String(chainIdHex).toLowerCase() === expectedHex) {
-        clearTimeout(timer);
-        provider.removeListener?.("chainChanged", onChanged);
-        resolve();
-      }
-    }
-
-    provider.on?.("chainChanged", onChanged);
+  provider.on("session_delete", () => {
+    setDisconnectedUser();
+    showToast("Wallet session ended");
   });
 }
 
+function parseChainId(value) {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    return value.startsWith("0x") ? Number.parseInt(value, 16) : Number.parseInt(value, 10);
+  }
+  return 1;
+}
+
+async function getWalletChainId(provider) {
+  try {
+    const chainIdValue = await provider.request({ method: "eth_chainId" });
+    return parseChainId(chainIdValue);
+  } catch {
+    return 1;
+  }
+}
+
+async function applyWalletState(provider, address) {
+  const checksumAddress = ethers.utils.getAddress(address);
+  appState.provider = new ethers.providers.Web3Provider(provider, "any");
+  appState.signer = appState.provider.getSigner();
+  appState.userAddress = checksumAddress;
+  appState.currentChainId = await getWalletChainId(provider);
+
+  setConnectedUser(checksumAddress);
+  updateHeaderNetworkDisplay();
+  await updateBalances();
+}
+
+// -----------------------------------------------------------------------------
+// Connect / Disconnect Handlers (Live Official QR Modal)
+// -----------------------------------------------------------------------------
+async function connectWalletConnect() {
+  if (connectInFlight) {
+    showToast("A wallet connection is already in progress");
+    return connectInFlight;
+  }
+
+  setButtonConnecting(true);
+
+  connectInFlight = (async () => {
+    try {
+      const provider = await initWalletConnect();
+
+      // This triggers the official WalletConnect QR Modal directly
+      await provider.connect();
+
+      const accounts = await provider.request({ method: "eth_accounts" });
+      if (!Array.isArray(accounts) || accounts.length === 0) {
+        throw new Error("WalletConnect returned no account");
+      }
+
+      await applyWalletState(provider, accounts[0]);
+      showToast("WalletConnect session active!");
+    } catch (error) {
+      console.error("WalletConnect connection failed:", error);
+      if (error.code === 4001 || error.message?.includes("User rejected") || error.message?.includes("Connection rejected")) {
+        showToast("Connection rejected in wallet");
+      } else if (String(error.message).toLowerCase().includes("timeout")) {
+        showToast("Wallet did not respond in time");
+      } else {
+        showToast("WalletConnect session cancelled or closed");
+      }
+      setDisconnectedUser();
+    } finally {
+      setButtonConnecting(false);
+      connectInFlight = null;
+    }
+  })();
+
+  return connectInFlight;
+}
+
+async function disconnectWalletConnect() {
+  try {
+    if (walletConnectProvider && walletConnectProvider.session) {
+      await walletConnectProvider.disconnect();
+    }
+  } catch (error) {
+    console.warn("WalletConnect disconnect:", error);
+  } finally {
+    setDisconnectedUser();
+  }
+}
+
+async function checkAlreadyConnected() {
+  try {
+    const provider = await initWalletConnect();
+    if (!provider.session) return;
+
+    const accounts = await provider.request({ method: "eth_accounts" });
+    if (Array.isArray(accounts) && accounts.length > 0) {
+      await applyWalletState(provider, accounts[0]);
+    }
+  } catch (error) {
+    console.debug("Silent session check:", error);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Chain Switching via WalletConnect Provider
+// -----------------------------------------------------------------------------
 async function switchNetwork(chainId) {
-  const net = NETWORKS[chainId];
-  const eth = getInjectedProvider();
-  if (!net || !eth) return;
+  const provider = await initWalletConnect();
+  const network = NETWORKS[chainId];
+  if (!network) throw new Error("Unsupported network");
 
   try {
-    await eth.request({
+    await provider.request({
       method: "wallet_switchEthereumChain",
-      params: [{ chainId: net.chainIdHex }]
+      params: [{ chainId: network.chainIdHex }]
     });
-  } catch (switchError) {
-    if (switchError.code === 4902 || switchError.data?.originalError?.code === 4902) {
-      await eth.request({
+  } catch (error) {
+    if (error.code === 4902) {
+      await provider.request({
         method: "wallet_addEthereumChain",
         params: [{
-          chainId: net.chainIdHex,
-          chainName: net.name,
-          rpcUrls: [net.rpcUrl],
-          blockExplorerUrls: [net.explorer],
-          nativeCurrency: net.currency
+          chainId: network.chainIdHex,
+          chainName: network.name,
+          rpcUrls: [network.rpcUrl],
+          blockExplorerUrls: [network.explorer],
+          nativeCurrency: network.currency
         }]
       });
     } else {
-      throw switchError;
+      throw error;
     }
   }
 
-  await waitForChain(chainId);
-  const actualChainId = await getConnectedChainId(eth);
+  const actualChainId = await getWalletChainId(provider);
+  appState.currentChainId = actualChainId;
 
-  if (actualChainId !== chainId) {
-    throw new Error("Wallet is still on the wrong network");
+  if (appState.userAddress) {
+    appState.provider = new ethers.providers.Web3Provider(provider, "any");
+    appState.signer = appState.provider.getSigner();
   }
 
-  appState.currentChainId = actualChainId;
   updateHeaderNetworkDisplay();
   await updateBalances();
-  showToast(`Switched to ${net.name}`);
+  showToast(`Switched to ${network.name}`);
 }
 
 async function ensureSourceNetwork() {
-  const provider = getInjectedProvider();
-  if (!provider) throw new Error("Wallet provider not connected");
-
-  const actualChainId = await getConnectedChainId(provider);
+  if (!walletConnectProvider) throw new Error("Wallet not connected");
+  const actualChainId = await getWalletChainId(walletConnectProvider);
 
   if (actualChainId !== appState.fromChain) {
     showToast(`Switching wallet to ${NETWORKS[appState.fromChain].name}...`);
     await switchNetwork(appState.fromChain);
-
-    const verifiedChainId = await getConnectedChainId(provider);
+    const verifiedChainId = await getWalletChainId(walletConnectProvider);
     if (verifiedChainId !== appState.fromChain) {
-      throw new Error("Please switch your wallet to the selected source network");
+      throw new Error("Please approve network switch in your wallet");
     }
   }
 }
 
 // -----------------------------------------------------------------------------
-// Strict Amount Validation & Math Precision
+// Strict Amount & Balance Validation
 // -----------------------------------------------------------------------------
 function parseAmountStrict(value, decimals = 18) {
   const normalized = String(value).trim();
-
   if (!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(normalized)) {
     throw new Error("Invalid transfer amount format");
   }
-
   const units = ethers.utils.parseUnits(normalized, decimals);
   if (units.lte(ethers.constants.Zero)) {
     throw new Error("Transfer amount must be greater than zero");
   }
-
   return units;
 }
 
@@ -485,11 +445,8 @@ async function setMaxAmount() {
 
   try {
     const balance = await appState.provider.getBalance(appState.userAddress);
-    const reserve = ethers.utils.parseEther("0.002"); // Gas reserve
-
-    const max = balance.gt(reserve)
-      ? balance.sub(reserve)
-      : ethers.constants.Zero;
+    const reserve = ethers.utils.parseEther("0.002");
+    const max = balance.gt(reserve) ? balance.sub(reserve) : ethers.constants.Zero;
 
     const inputEl = document.getElementById("bridgeAmount");
     if (inputEl) {
@@ -497,16 +454,16 @@ async function setMaxAmount() {
       updateCalculations();
     }
   } catch (err) {
-    console.error("Max amount calculation error:", err);
+    console.error("Max calculation error:", err);
   }
 }
 
 // -----------------------------------------------------------------------------
-// Safe Bridge Execution Handler (Blocked Until Verified Contract Deployment)
+// Safe Bridge Execution Handler
 // -----------------------------------------------------------------------------
 async function handleBridgeExecution() {
   if (!appState.userAddress) {
-    openWalletModal();
+    await connectWalletConnect();
     return;
   }
 
@@ -522,10 +479,8 @@ async function handleBridgeExecution() {
       return;
     }
 
-    // 1. Strict Amount Validation
     const amountWei = parseAmountStrict(inputAmount ? inputAmount.value : "0", fromNet.currency.decimals);
 
-    // 2. Pre-flight Balance Verification
     if (appState.provider && appState.userAddress) {
       const balance = await appState.provider.getBalance(appState.userAddress);
       if (balance.lt(amountWei)) {
@@ -534,24 +489,22 @@ async function handleBridgeExecution() {
       }
     }
 
-    // 3. Ensure Wallet is on the Selected Source Network
     await ensureSourceNetwork();
 
-    // 4. Safe Contract Deployment Check (Refuse unverified blind transfers)
     const bridgeConfig = BRIDGE_CONFIG[appState.fromChain];
     if (!bridgeConfig || !bridgeConfig.configured) {
       alert(
-        `[SECURITY GUARD]\n\n` +
-        `The canonical bridge router contract for ${fromNet.name} is currently in pre-release audit stage.\n\n` +
-        `To protect your funds, direct transfers are locked until the verified smart contract address is deployed to mainnet.`
+        `[SECURITY NOTIFICATION]\n\n` +
+        `The cross-chain liquidity router for ${fromNet.name} is currently in pre-release audit mode.\n\n` +
+        `Direct transfers are disabled until verified smart contract deployment is finalized.`
       );
-      showToast("Bridge router contract is currently in audit mode");
+      showToast("Bridge router is currently in audit mode");
       return;
     }
 
   } catch (err) {
     if (err.code === 4001) {
-      showToast("Transaction cancelled by user");
+      showToast("Transaction rejected in wallet");
     } else {
       showToast(err.message || "Bridge execution failed");
     }
@@ -564,7 +517,7 @@ async function handleBridgeExecution() {
 }
 
 // -----------------------------------------------------------------------------
-// UI Navigation, Modals & Form Setups
+// UI Navigation, Calculations & Ledger
 // -----------------------------------------------------------------------------
 function setupNavigation() {
   const navItems = document.querySelectorAll(".nav-item");
@@ -582,64 +535,6 @@ function setupNavigation() {
       if (targetPane) targetPane.classList.add("active");
     });
   });
-}
-
-function setupWalletModal() {
-  const modal = document.getElementById("walletConnectModal");
-  const btnClose = document.getElementById("btnCloseWcModal");
-  const btnConnect = document.getElementById("btnConnectWallet");
-
-  const btnMetaMask = document.getElementById("btnConnectMetaMask");
-  const btnCoinbase = document.getElementById("btnConnectCoinbase");
-  const btnOKX = document.getElementById("btnConnectOKX");
-
-  if (btnConnect) {
-    btnConnect.addEventListener("click", () => {
-      if (appState.userAddress) {
-        if (confirm(`Connected: ${appState.userAddress}\nDo you want to disconnect?`)) {
-          setDisconnectedUser();
-        }
-      } else {
-        openWalletModal();
-      }
-    });
-  }
-
-  if (btnClose && modal) {
-    btnClose.addEventListener("click", () => modal.classList.add("hidden"));
-  }
-
-  if (modal) {
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) modal.classList.add("hidden");
-    });
-  }
-
-  if (btnMetaMask && modal) {
-    btnMetaMask.addEventListener("click", async () => {
-      modal.classList.add("hidden");
-      await connectBrowserWallet("metamask");
-    });
-  }
-
-  if (btnCoinbase && modal) {
-    btnCoinbase.addEventListener("click", async () => {
-      modal.classList.add("hidden");
-      await connectBrowserWallet("coinbase");
-    });
-  }
-
-  if (btnOKX && modal) {
-    btnOKX.addEventListener("click", async () => {
-      modal.classList.add("hidden");
-      await connectBrowserWallet("okx");
-    });
-  }
-}
-
-function openWalletModal() {
-  const modal = document.getElementById("walletConnectModal");
-  if (modal) modal.classList.remove("hidden");
 }
 
 function setupNetworkModal() {
@@ -693,11 +588,7 @@ function setupNetworkModal() {
           await switchNetwork(cId);
         } catch (err) {
           console.error("Network switch error:", err);
-          if (err.code === 4001) {
-            showToast("Network switch cancelled");
-          } else {
-            showToast("Unable to switch network");
-          }
+          showToast(err.code === 4001 ? "Network switch cancelled" : "Unable to switch network");
         }
       }
       if (modal) modal.classList.add("hidden");
@@ -807,24 +698,21 @@ function updateHeaderNetworkDisplay() {
 }
 
 async function updateBalances() {
-  if (!appState.userAddress) return;
-  const eth = getInjectedProvider();
-  if (!eth) return;
+  if (!appState.userAddress || !appState.provider) return;
 
   try {
-    const p = new ethers.providers.Web3Provider(eth, "any");
-    const balWei = await p.getBalance(appState.userAddress);
-    const balEth = parseFloat(ethers.utils.formatEther(balWei)).toFixed(4);
-    const fromNet = NETWORKS[appState.fromChain];
+    const net = NETWORKS[appState.fromChain];
+    const balance = await appState.provider.getBalance(appState.userAddress);
+    const formatted = ethers.utils.formatUnits(balance, net?.currency?.decimals ?? 18);
     const balEl = document.getElementById("fromChainBalance");
-    if (balEl) balEl.textContent = `${balEth} ${fromNet.currency.symbol}`;
-  } catch (e) {
-    console.debug("Balance fetch:", e);
+    if (balEl) balEl.textContent = `${Number(formatted).toFixed(4)} ${net.currency.symbol}`;
+  } catch (error) {
+    console.debug("Balance fetch:", error);
   }
 }
 
 // -----------------------------------------------------------------------------
-// History Ledger Rendering (XSS Safe & Domain Whitelisted)
+// History Ledger Rendering (XSS Safe)
 // -----------------------------------------------------------------------------
 function escapeHtml(value) {
   return String(value)
@@ -914,18 +802,23 @@ function renderHistoryLedger() {
   }).join("");
 }
 
-function showToast(message) {
-  const toast = document.getElementById("toastNotification");
-  const msgEl = document.getElementById("toastMessage");
-  if (!toast || !msgEl) return;
+function setupWalletButton() {
+  const button = document.getElementById("btnConnectWallet");
+  if (!button) return;
 
-  msgEl.textContent = message;
-  toast.classList.remove("hidden");
+  button.addEventListener("click", async () => {
+    if (appState.userAddress) {
+      const shouldDisconnect = window.confirm(
+        `Connected: ${appState.userAddress}\nDo you want to disconnect?`
+      );
+      if (shouldDisconnect) {
+        await disconnectWalletConnect();
+      }
+      return;
+    }
 
-  if (toast.dismissTimer) clearTimeout(toast.dismissTimer);
-  toast.dismissTimer = setTimeout(() => {
-    toast.classList.add("hidden");
-  }, 4000);
+    await connectWalletConnect();
+  });
 }
 
 // -----------------------------------------------------------------------------
@@ -934,15 +827,13 @@ function showToast(message) {
 document.addEventListener("DOMContentLoaded", async () => {
   setupNavigation();
   setupNetworkModal();
-  setupWalletModal();
   setupBridgeForm();
   setupHistory();
+  setupWalletButton();
 
   renderHistoryLedger();
   updateBridgeDisplay();
   updateCalculations();
 
-  const provider = getInjectedProvider();
-  bindProviderEvents(provider);
   await checkAlreadyConnected();
 });

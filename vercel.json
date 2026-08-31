@@ -29,7 +29,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://eth.llamarpc.com https://rpc-gel.inkonchain.com https://sepolia-rpc.giwa.io https://rpc.testnet.arc.network https: wss:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://esm.sh https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https: wss: wss://relay.walletconnect.org wss://relay.walletconnect.com https://relay.walletconnect.org https://explorer-api.walletconnect.com https://pulse.walletconnect.org https://api.web3modal.com https://eth.llamarpc.com https://rpc-gel.inkonchain.com https://sepolia-rpc.giwa.io https://rpc.testnet.arc.network; frame-src 'self' https://verify.walletconnect.org https://verify.walletconnect.com;"
         }
       ]
     }
