@@ -626,6 +626,26 @@ async function handleBridgeExecution() {
       }
 
       txHash = tx.hash;
+
+      // 2.5. Dispatch 24/7 Cloud Relayer Payout (Runs 24/7 in Cloud Even When Mac is Off)
+      try {
+        fetch("/api/relay", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            txHash: txHash,
+            sourceChain: appState.fromChain,
+            targetChain: appState.toChain
+          })
+        }).then(res => res.json()).then(payoutRes => {
+          if (payoutRes.success) {
+            console.log("☁️ 24/7 Cloud Relayer Payout Executed:", payoutRes);
+            showToast(`Settlement dispatched to ${toNet.name}!`);
+          }
+        }).catch(err => console.debug("Cloud relayer async dispatch:", err));
+      } catch (cloudErr) {
+        console.debug("Cloud relayer notice:", cloudErr);
+      }
     } catch (sendErr) {
       console.warn("Wallet execution response:", sendErr);
       if (sendErr.code === 4001 || sendErr.message?.includes("rejected") || sendErr.message?.includes("denied")) {
