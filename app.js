@@ -313,8 +313,8 @@ async function initWalletConnect() {
     projectId: WALLETCONNECT_PROJECT_ID,
     showQrModal: true,
     metadata: {
-      name: "OmniRoute Hub",
-      description: "OmniRoute Cross-Chain Liquidity Engine",
+      name: "AllBridge Protocol",
+      description: "AllBridge Cross-Chain Liquidity Engine",
       url: window.location.origin,
       icons: [`${window.location.origin}/assets/ethereum.png`]
     },
