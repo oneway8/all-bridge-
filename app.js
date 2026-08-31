@@ -1,6 +1,6 @@
 /**
  * AllBridge Protocol — Production Cross-Chain Liquidity Engine
- * Version: 5.0.0 (Base Mainnet & Multi-Asset Support)
+ * Version: 5.1.0 (Live Dynamic Market Price Oracle Integration)
  */
 
 import EthereumProvider from "https://esm.sh/@walletconnect/ethereum-provider@2.21.6";
@@ -29,7 +29,8 @@ const CHAIN_ICONS = Object.freeze({
   arc: `<img src="assets/arc.svg" alt="ARC" width="28" height="28" class="chain-img arc-img">`
 });
 
-const NETWORKS = Object.freeze({
+// Dynamic Network States (Prices Updated via Live Price Feeds)
+const NETWORKS = {
   1: {
     chainIdHex: "0x1",
     name: "Ethereum",
@@ -40,7 +41,7 @@ const NETWORKS = Object.freeze({
     explorer: "https://etherscan.io",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
     iconKey: "eth",
-    priceUsd: 2600
+    priceUsd: 2445.00
   },
   8453: {
     chainIdHex: "0x2105",
@@ -52,7 +53,7 @@ const NETWORKS = Object.freeze({
     explorer: "https://basescan.org",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
     iconKey: "base",
-    priceUsd: 2600
+    priceUsd: 2445.00
   },
   57073: {
     chainIdHex: "0xdef1",
@@ -64,7 +65,7 @@ const NETWORKS = Object.freeze({
     explorer: "https://explorer.inkonchain.com",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
     iconKey: "ink",
-    priceUsd: 2600
+    priceUsd: 2445.00
   },
   91342: {
     chainIdHex: "0x164ce",
@@ -76,7 +77,7 @@ const NETWORKS = Object.freeze({
     explorer: "https://sepolia-explorer.giwa.io",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
     iconKey: "giwa",
-    priceUsd: 2600
+    priceUsd: 2445.00
   },
   5042002: {
     chainIdHex: "0x4cef52",
@@ -90,7 +91,7 @@ const NETWORKS = Object.freeze({
     iconKey: "arc",
     priceUsd: 1.00
   }
-});
+};
 
 const SUPPORTED_CHAIN_IDS = [1, 8453, 57073, 91342, 5042002];
 
@@ -109,6 +110,50 @@ const BRIDGE_CONFIG = Object.freeze({
   91342: { configured: false },
   5042002: { configured: false }
 });
+
+// -----------------------------------------------------------------------------
+// Live Real-Time Market Price Oracle (Binance / Coinbase Multi-Feed)
+// -----------------------------------------------------------------------------
+async function fetchLivePrices() {
+  let ethPrice = null;
+
+  // 1. Primary: Binance Live Ticker
+  try {
+    const res = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT", { cache: "no-store" });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.price) {
+        ethPrice = parseFloat(data.price);
+      }
+    }
+  } catch (err) {
+    console.debug("Binance price feed notice:", err);
+  }
+
+  // 2. Secondary Fallback: Coinbase Spot Price
+  if (!ethPrice) {
+    try {
+      const res = await fetch("https://api.coinbase.com/v2/prices/ETH-USD/spot", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.data?.amount) {
+          ethPrice = parseFloat(data.data.amount);
+        }
+      }
+    } catch (err) {
+      console.debug("Coinbase price feed notice:", err);
+    }
+  }
+
+  // Update dynamic network matrix if valid price obtained
+  if (ethPrice && !isNaN(ethPrice) && ethPrice > 0) {
+    NETWORKS[1].priceUsd = ethPrice;
+    NETWORKS[8453].priceUsd = ethPrice;
+    NETWORKS[57073].priceUsd = ethPrice;
+    NETWORKS[91342].priceUsd = ethPrice;
+    updateCalculations();
+  }
+}
 
 // -----------------------------------------------------------------------------
 // Application State & Globals
@@ -646,6 +691,7 @@ function setupBridgeForm() {
   const btnSwap = document.getElementById("btnSwapDirection");
   const inputAmount = document.getElementById("bridgeAmount");
   const btnExecute = document.getElementById("btnExecuteBridge");
+  const btnRefresh = document.getElementById("btnRefresh");
   const pctButtons = document.querySelectorAll(".pct-btn");
 
   if (btnSwap) {
@@ -655,6 +701,19 @@ function setupBridgeForm() {
       appState.toChain = temp;
       updateBridgeDisplay();
       updateCalculations();
+    });
+  }
+
+  if (btnRefresh) {
+    btnRefresh.addEventListener("click", async () => {
+      btnRefresh.style.transform = "rotate(360deg)";
+      btnRefresh.style.transition = "transform 0.5s ease";
+      await fetchLivePrices();
+      showToast(`Live rates refreshed (ETH: $${NETWORKS[1].priceUsd.toFixed(2)})`);
+      setTimeout(() => {
+        btnRefresh.style.transform = "none";
+        btnRefresh.style.transition = "none";
+      }, 600);
     });
   }
 
@@ -861,6 +920,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderHistoryLedger();
   updateBridgeDisplay();
   updateCalculations();
+
+  // 1. Initial live market price fetch
+  await fetchLivePrices();
+
+  // 2. Periodic background market price refresh every 30 seconds
+  setInterval(fetchLivePrices, 30000);
 
   await checkAlreadyConnected();
 });
