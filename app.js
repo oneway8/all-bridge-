@@ -3,7 +3,7 @@
  * Version: 7.0.0 (Full Live On-Chain Bridge Execution & Real Wallet Prompting)
  */
 
-import EthereumProvider from "https://esm.sh/@walletconnect/ethereum-provider@2.21.6";
+import EthereumProvider from "https://esm.sh/@walletconnect/ethereum-provider@2.13.0";
 
 const ethers = window.ethers;
 if (!ethers) {
