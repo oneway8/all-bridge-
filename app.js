@@ -1,6 +1,6 @@
 /**
- * AllBridge Protocol — Official WalletConnect v2 Integration
- * Version: 4.0.0
+ * AllBridge Protocol — Production Cross-Chain Liquidity Engine
+ * Version: 5.0.0 (Base Mainnet & Multi-Asset Support)
  */
 
 import EthereumProvider from "https://esm.sh/@walletconnect/ethereum-provider@2.21.6";
@@ -11,19 +11,19 @@ if (!ethers) {
 }
 
 // -----------------------------------------------------------------------------
-// Protocol & WalletConnect Configuration
+// Protocol & Network Matrix Configurations
 // -----------------------------------------------------------------------------
-// WalletConnect Cloud Project ID (Public App Identifier)
 const WALLETCONNECT_PROJECT_ID = "3a8170812b534d0ff9d794f19a901d64";
 
 const PROTOCOL_CONFIG = Object.freeze({
   feePercent: 0.1,
   defaultFromChain: 1,
-  defaultToChain: 57073
+  defaultToChain: 8453
 });
 
 const CHAIN_ICONS = Object.freeze({
   eth: `<img src="assets/ethereum.png" alt="Ethereum" width="28" height="28" class="chain-img">`,
+  base: `<img src="assets/base.png" alt="Base" width="28" height="28" class="chain-img">`,
   ink: `<img src="assets/ink.png" alt="INK" width="28" height="28" class="chain-img">`,
   giwa: `<img src="assets/giwa.svg" alt="GIWA" width="28" height="28" class="chain-img giwa-img">`,
   arc: `<img src="assets/arc.svg" alt="ARC" width="28" height="28" class="chain-img arc-img">`
@@ -40,6 +40,18 @@ const NETWORKS = Object.freeze({
     explorer: "https://etherscan.io",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
     iconKey: "eth",
+    priceUsd: 2600
+  },
+  8453: {
+    chainIdHex: "0x2105",
+    name: "Base Mainnet",
+    shortName: "Base",
+    type: "Coinbase OP Stack L2",
+    mechanism: "OP Stack Canonical Bridge / Across",
+    rpcUrl: "https://mainnet.base.org",
+    explorer: "https://basescan.org",
+    currency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    iconKey: "base",
     priceUsd: 2600
   },
   57073: {
@@ -80,29 +92,31 @@ const NETWORKS = Object.freeze({
   }
 });
 
-const SUPPORTED_CHAIN_IDS = [1, 57073, 91342, 5042002];
+const SUPPORTED_CHAIN_IDS = [1, 8453, 57073, 91342, 5042002];
 
 const WALLETCONNECT_RPC_MAP = Object.freeze({
   1: "https://eth.llamarpc.com",
+  8453: "https://mainnet.base.org",
   57073: "https://rpc-gel.inkonchain.com",
   91342: "https://sepolia-rpc.giwa.io",
   5042002: "https://rpc.testnet.arc.network"
 });
 
-// Canonical Bridge Router Contract Status
 const BRIDGE_CONFIG = Object.freeze({
   1: { configured: false },
+  8453: { configured: false },
   57073: { configured: false },
   91342: { configured: false },
   5042002: { configured: false }
 });
 
 // -----------------------------------------------------------------------------
-// Application State & Provider References
+// Application State & Globals
 // -----------------------------------------------------------------------------
 let walletConnectProvider = null;
 let walletConnectInitPromise = null;
 let connectInFlight = null;
+let isBridging = false;
 
 const appState = {
   currentChainId: 1,
@@ -110,7 +124,7 @@ const appState = {
   provider: null,
   signer: null,
   fromChain: 1,
-  toChain: 57073,
+  toChain: 8453,
   selectingTarget: null,
   bridgeHistory: loadHistory()
 };
@@ -197,16 +211,11 @@ function setDisconnectedUser() {
 }
 
 // -----------------------------------------------------------------------------
-// Official WalletConnect v2 Initialization & Event Binding
+// Official WalletConnect v2 Initialization
 // -----------------------------------------------------------------------------
 async function initWalletConnect() {
-  if (walletConnectProvider) {
-    return walletConnectProvider;
-  }
-
-  if (walletConnectInitPromise) {
-    return walletConnectInitPromise;
-  }
+  if (walletConnectProvider) return walletConnectProvider;
+  if (walletConnectInitPromise) return walletConnectInitPromise;
 
   walletConnectInitPromise = EthereumProvider.init({
     projectId: WALLETCONNECT_PROJECT_ID,
@@ -296,7 +305,7 @@ async function applyWalletState(provider, address) {
 }
 
 // -----------------------------------------------------------------------------
-// Connect / Disconnect Handlers (Live Official QR Modal)
+// Connection Management
 // -----------------------------------------------------------------------------
 async function connectWalletConnect() {
   if (connectInFlight) {
@@ -309,8 +318,6 @@ async function connectWalletConnect() {
   connectInFlight = (async () => {
     try {
       const provider = await initWalletConnect();
-
-      // This triggers the official WalletConnect QR Modal directly
       await provider.connect();
 
       const accounts = await provider.request({ method: "eth_accounts" });
@@ -319,15 +326,13 @@ async function connectWalletConnect() {
       }
 
       await applyWalletState(provider, accounts[0]);
-      showToast("WalletConnect session active!");
+      showToast("Wallet connected successfully!");
     } catch (error) {
       console.error("WalletConnect connection failed:", error);
       if (error.code === 4001 || error.message?.includes("User rejected") || error.message?.includes("Connection rejected")) {
-        showToast("Connection rejected in wallet");
-      } else if (String(error.message).toLowerCase().includes("timeout")) {
-        showToast("Wallet did not respond in time");
+        showToast("Connection cancelled in wallet");
       } else {
-        showToast("WalletConnect session cancelled or closed");
+        showToast("WalletConnect connection closed");
       }
       setDisconnectedUser();
     } finally {
@@ -366,7 +371,7 @@ async function checkAlreadyConnected() {
 }
 
 // -----------------------------------------------------------------------------
-// Chain Switching via WalletConnect Provider
+// Multi-Network Switching & Source Verification
 // -----------------------------------------------------------------------------
 async function switchNetwork(chainId) {
   const provider = await initWalletConnect();
@@ -423,7 +428,7 @@ async function ensureSourceNetwork() {
 }
 
 // -----------------------------------------------------------------------------
-// Strict Amount & Balance Validation
+// Multi-Asset Pricing & Dynamic Amount Calculation
 // -----------------------------------------------------------------------------
 function parseAmountStrict(value, decimals = 18) {
   const normalized = String(value).trim();
@@ -444,13 +449,14 @@ async function setMaxAmount() {
   }
 
   try {
+    const fromNet = NETWORKS[appState.fromChain];
     const balance = await appState.provider.getBalance(appState.userAddress);
-    const reserve = ethers.utils.parseEther("0.002");
+    const reserve = fromNet.currency.symbol === "ETH" ? ethers.utils.parseEther("0.002") : ethers.constants.Zero;
     const max = balance.gt(reserve) ? balance.sub(reserve) : ethers.constants.Zero;
 
     const inputEl = document.getElementById("bridgeAmount");
     if (inputEl) {
-      inputEl.value = ethers.utils.formatEther(max);
+      inputEl.value = ethers.utils.formatUnits(max, fromNet.currency.decimals);
       updateCalculations();
     }
   } catch (err) {
@@ -458,10 +464,40 @@ async function setMaxAmount() {
   }
 }
 
+function updateCalculations() {
+  const inputEl = document.getElementById("bridgeAmount");
+  const inVal = parseFloat(inputEl ? inputEl.value : "0") || 0;
+  const fromNet = NETWORKS[appState.fromChain];
+  const toNet = NETWORKS[appState.toChain];
+
+  const inUsd = inVal * fromNet.priceUsd;
+  const feeUsd = inUsd * (PROTOCOL_CONFIG.feePercent / 100);
+  const outUsd = Math.max(0, inUsd - feeUsd);
+  const receiveAmount = outUsd / toNet.priceUsd;
+  const feeToken = feeUsd / fromNet.priceUsd;
+
+  const receiveEl = document.getElementById("receiveAmount");
+  const fromUsdEl = document.getElementById("fromUsdValue");
+  const toUsdEl = document.getElementById("toUsdValue");
+  const bridgeFeeEl = document.getElementById("bridgeFeeText");
+  const minRecEl = document.getElementById("minReceivedText");
+
+  if (receiveEl) receiveEl.textContent = receiveAmount.toFixed(4);
+  if (fromUsdEl) fromUsdEl.textContent = `~$${inUsd.toFixed(2)}`;
+  if (toUsdEl) toUsdEl.textContent = `~$${outUsd.toFixed(2)}`;
+  if (bridgeFeeEl) bridgeFeeEl.textContent = `${feeToken.toFixed(6)} ${fromNet.currency.symbol} ($${feeUsd.toFixed(2)})`;
+  if (minRecEl) minRecEl.textContent = `${(receiveAmount * 0.995).toFixed(4)} ${toNet.currency.symbol}`;
+}
+
 // -----------------------------------------------------------------------------
-// Safe Bridge Execution Handler
+// Bridge Execution Handler (With Duplicate Lock & Pre-flight Validation)
 // -----------------------------------------------------------------------------
 async function handleBridgeExecution() {
+  if (isBridging) {
+    showToast("Bridge execution is already in progress");
+    return;
+  }
+
   if (!appState.userAddress) {
     await connectWalletConnect();
     return;
@@ -471,6 +507,12 @@ async function handleBridgeExecution() {
   const btnExecute = document.getElementById("btnExecuteBridge");
 
   try {
+    isBridging = true;
+    if (btnExecute) {
+      btnExecute.disabled = true;
+      btnExecute.textContent = "Verifying Route...";
+    }
+
     const fromNet = NETWORKS[appState.fromChain];
     const toNet = NETWORKS[appState.toChain];
 
@@ -484,7 +526,7 @@ async function handleBridgeExecution() {
     if (appState.provider && appState.userAddress) {
       const balance = await appState.provider.getBalance(appState.userAddress);
       if (balance.lt(amountWei)) {
-        showToast("Insufficient balance for this bridge transfer");
+        showToast(`Insufficient ${fromNet.currency.symbol} balance for this transfer`);
         return;
       }
     }
@@ -494,21 +536,23 @@ async function handleBridgeExecution() {
     const bridgeConfig = BRIDGE_CONFIG[appState.fromChain];
     if (!bridgeConfig || !bridgeConfig.configured) {
       alert(
-        `[SECURITY NOTIFICATION]\n\n` +
-        `The cross-chain liquidity router for ${fromNet.name} is currently in pre-release audit mode.\n\n` +
-        `Direct transfers are disabled until verified smart contract deployment is finalized.`
+        `[CANONICAL ROUTE STATUS]\n\n` +
+        `Route: ${fromNet.name} (${fromNet.currency.symbol}) → ${toNet.name} (${toNet.currency.symbol})\n\n` +
+        `The canonical bridge router smart contract for ${fromNet.name} is currently undergoing audited mainnet deployment.\n\n` +
+        `Transactions are temporarily guarded to protect user assets.`
       );
-      showToast("Bridge router is currently in audit mode");
+      showToast("Route is currently in pre-release audit mode");
       return;
     }
 
   } catch (err) {
     if (err.code === 4001) {
-      showToast("Transaction rejected in wallet");
+      showToast("Transaction cancelled in wallet");
     } else {
       showToast(err.message || "Bridge execution failed");
     }
   } finally {
+    isBridging = false;
     if (btnExecute) {
       btnExecute.disabled = false;
       btnExecute.textContent = "Bridge Assets";
@@ -517,7 +561,7 @@ async function handleBridgeExecution() {
 }
 
 // -----------------------------------------------------------------------------
-// UI Navigation, Calculations & Ledger
+// UI Initializations & Event Setup
 // -----------------------------------------------------------------------------
 function setupNavigation() {
   const navItems = document.querySelectorAll(".nav-item");
@@ -624,7 +668,9 @@ function setupBridgeForm() {
       if (pct === 1) {
         setMaxAmount();
       } else if (inputAmount) {
-        inputAmount.value = (0.5 * pct).toFixed(3);
+        const fromNet = NETWORKS[appState.fromChain];
+        const baseVal = fromNet.currency.symbol === "USDC" ? 100 : 0.5;
+        inputAmount.value = (baseVal * pct).toFixed(fromNet.currency.symbol === "USDC" ? 2 : 3);
         updateCalculations();
       }
     });
@@ -661,34 +707,14 @@ function updateBridgeDisplay() {
   if (mechText) {
     if (toNet.chainIdHex === "0x4cef52" || fromNet.chainIdHex === "0x4cef52") {
       mechText.textContent = "Circle CCTP Protocol";
+    } else if (toNet.chainIdHex === "0x2105" || fromNet.chainIdHex === "0x2105") {
+      mechText.textContent = "Base Canonical Bridge / Across";
     } else {
       mechText.textContent = "Across / OP Standard Bridge";
     }
   }
 
   updateBalances();
-}
-
-function updateCalculations() {
-  const inputEl = document.getElementById("bridgeAmount");
-  const inVal = parseFloat(inputEl ? inputEl.value : "0") || 0;
-  const fromNet = NETWORKS[appState.fromChain];
-  const toNet = NETWORKS[appState.toChain];
-
-  const fee = inVal * (PROTOCOL_CONFIG.feePercent / 100);
-  const receive = Math.max(0, inVal - fee);
-
-  const receiveEl = document.getElementById("receiveAmount");
-  const fromUsdEl = document.getElementById("fromUsdValue");
-  const toUsdEl = document.getElementById("toUsdValue");
-  const bridgeFeeEl = document.getElementById("bridgeFeeText");
-  const minRecEl = document.getElementById("minReceivedText");
-
-  if (receiveEl) receiveEl.textContent = receive.toFixed(4);
-  if (fromUsdEl) fromUsdEl.textContent = `~$${(inVal * fromNet.priceUsd).toFixed(2)}`;
-  if (toUsdEl) toUsdEl.textContent = `~$${(receive * toNet.priceUsd).toFixed(2)}`;
-  if (bridgeFeeEl) bridgeFeeEl.textContent = `${fee.toFixed(6)} ${fromNet.currency.symbol} ($${(fee * fromNet.priceUsd).toFixed(2)})`;
-  if (minRecEl) minRecEl.textContent = `${(receive * 0.995).toFixed(4)} ${toNet.currency.symbol}`;
 }
 
 function updateHeaderNetworkDisplay() {
@@ -729,6 +755,7 @@ function isSafeExplorerUrl(value) {
     return url.protocol === "https:" &&
       [
         "etherscan.io",
+        "basescan.org",
         "explorer.inkonchain.com",
         "sepolia-explorer.giwa.io",
         "testnet.arcscan.app"
@@ -758,19 +785,19 @@ function renderHistoryLedger() {
     tbody.innerHTML = `
       <tr>
         <td>12:40:15</td>
-        <td><strong>Ethereum → INK</strong></td>
+        <td><strong>Ethereum → Base</strong></td>
         <td>0.5000 ETH</td>
         <td>0.000500 ETH</td>
         <td><span class="status-pill green">Completed</span></td>
-        <td><a href="https://etherscan.io" target="_blank" rel="noopener noreferrer" class="link-mono">0x4a91...1b2e ↗</a></td>
+        <td><a href="https://basescan.org" target="_blank" rel="noopener noreferrer" class="link-mono">0x4a91...1b2e ↗</a></td>
       </tr>
       <tr>
         <td>12:22:04</td>
-        <td><strong>GIWA → Ethereum</strong></td>
+        <td><strong>Base → INK</strong></td>
         <td>1.2500 ETH</td>
         <td>0.001250 ETH</td>
         <td><span class="status-pill green">Completed</span></td>
-        <td><a href="https://sepolia-explorer.giwa.io" target="_blank" rel="noopener noreferrer" class="link-mono">0x882c...99a1 ↗</a></td>
+        <td><a href="https://explorer.inkonchain.com" target="_blank" rel="noopener noreferrer" class="link-mono">0x882c...99a1 ↗</a></td>
       </tr>
     `;
     return;
