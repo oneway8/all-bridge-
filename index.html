@@ -3,15 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AllBridge — Cross-Chain Liquidity Protocol</title>
+  <title>OmniRoute Hub — Cross-Chain Liquidity Portal</title>
   <link rel="canonical" href="https://all-bridge-hub.vercel.app">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <!-- Ethers.js v5 & QRCode -->
+  <!-- Ethers.js v5 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -25,7 +24,7 @@
             <path d="M9 16L15 10L21 16L15 22L9 16Z" fill="#3B82F6"/>
             <path d="M15 10L23 16L15 22" stroke="#60A5FA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span class="brand-title">AllBridge</span>
+          <span class="brand-title">OmniRoute</span>
         </a>
 
         <nav class="nav-links">
@@ -236,7 +235,20 @@
                 <td>ETH</td>
                 <td>~12 sec</td>
                 <td><span class="status-pill green">Operational</span></td>
-                <td><a href="https://etherscan.io" target="_blank" class="link-mono">etherscan.io ↗</a></td>
+                <td><a href="https://etherscan.io" target="_blank" rel="noopener noreferrer" class="link-mono">etherscan.io ↗</a></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="table-chain-cell">
+                    <img src="assets/base.png" width="22" height="22" alt="Base">
+                    <strong>Base Mainnet</strong>
+                  </div>
+                </td>
+                <td>Coinbase OP Stack L2</td>
+                <td>ETH</td>
+                <td>~2 sec</td>
+                <td><span class="status-pill green">Operational</span></td>
+                <td><a href="https://basescan.org" target="_blank" rel="noopener noreferrer" class="link-mono">basescan.org ↗</a></td>
               </tr>
               <tr>
                 <td>
@@ -249,7 +261,7 @@
                 <td>ETH</td>
                 <td>~2 sec</td>
                 <td><span class="status-pill green">Operational</span></td>
-                <td><a href="https://explorer.inkonchain.com" target="_blank" class="link-mono">inkonchain.com ↗</a></td>
+                <td><a href="https://explorer.inkonchain.com" target="_blank" rel="noopener noreferrer" class="link-mono">inkonchain.com ↗</a></td>
               </tr>
               <tr>
                 <td>
@@ -346,94 +358,6 @@
 
   </main>
 
-  <!-- WalletConnect Official Modal -->
-  <div class="modal-backdrop hidden" id="walletConnectModal">
-    <div class="modal-box wc-modal-box">
-      <div class="wc-modal-header">
-        <div class="wc-brand">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
-            <path fill="#3B99FC" d="M5.38 6.44c3.66-3.58 9.58-3.58 13.24 0l.44.43c.18.18.18.47 0 .65l-1.5 1.47c-.09.09-.24.09-.33 0l-.6-.59c-2.58-2.52-6.75-2.52-9.33 0l-.64.63c-.09.09-.24.09-.33 0L4.83 7.56c-.18-.18-.18-.47 0-.65l.55-.47zM21.5 9.77l1.35 1.32c.18.18.18.47 0 .65l-6.1 5.96c-.18.18-.48.18-.66 0l-4.32-4.22c-.04-.04-.12-.04-.16 0l-4.32 4.22c-.18.18-.48.18-.66 0L.58 11.74c-.18-.18-.18-.47 0-.65l1.35-1.32c.18-.18.48-.18.66 0l4.32 4.22c.04.04.12.04.16 0l4.32-4.22c.18-.18.48-.18.66 0l4.32 4.22c.04.04.12.04.16 0l4.32-4.22c.18-.18.48-.18.66 0z"/>
-          </svg>
-          <div>
-            <h4>WalletConnect</h4>
-            <small>Connect with 300+ mobile wallets & apps</small>
-          </div>
-        </div>
-        <button class="modal-close" id="btnCloseWcModal">✕</button>
-      </div>
-
-      <div class="wc-modal-body">
-        <!-- Modal Tabs -->
-        <div class="wc-tabs">
-          <button class="wc-tab-btn active" id="tabWcExtension">Browser Wallet</button>
-          <button class="wc-tab-btn" id="tabWcQr">Mobile QR</button>
-        </div>
-
-        <!-- 1. Browser Wallets View -->
-        <div id="viewWcExtension" class="wc-view active">
-          <div class="wc-wallet-list">
-            <button class="wc-wallet-item" id="btnConnectMetaMask">
-              <img src="assets/ethereum.png" width="28" height="28" alt="MetaMask">
-              <div class="wc-item-info">
-                <strong>MetaMask / Injected</strong>
-                <small>Connect browser extension</small>
-              </div>
-              <span class="wc-tag">Detected</span>
-            </button>
-            <button class="wc-wallet-item" id="btnConnectCoinbase">
-              <img src="assets/base.png" width="28" height="28" alt="Coinbase">
-              <div class="wc-item-info">
-                <strong>Coinbase Wallet</strong>
-                <small>Extension & App</small>
-              </div>
-            </button>
-            <button class="wc-wallet-item" id="btnConnectOKX">
-              <div class="chain-logo-circle" style="background:#000;">OKX</div>
-              <div class="wc-item-info">
-                <strong>OKX / Rabby Wallet</strong>
-                <small>Multi-chain Web3</small>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <!-- 2. QR Code View -->
-        <div id="viewWcQr" class="wc-view">
-          <div class="wc-qr-card">
-            <div id="wcQrBox" class="wc-qr-canvas"></div>
-            <div class="wc-qr-badge">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
-                <path fill="#3B99FC" d="M5.38 6.44c3.66-3.58 9.58-3.58 13.24 0l.44.43c.18.18.18.47 0 .65l-1.5 1.47c-.09.09-.24.09-.33 0l-.6-.59c-2.58-2.52-6.75-2.52-9.33 0l-.64.63c-.09.09-.24.09-.33 0L4.83 7.56c-.18-.18-.18-.47 0-.65l.55-.47zM21.5 9.77l1.35 1.32c.18.18.18.47 0 .65l-6.1 5.96c-.18.18-.48.18-.66 0l-4.32-4.22c-.04-.04-.12-.04-.16 0l-4.32 4.22c-.18.18-.48.18-.66 0L.58 11.74c-.18-.18-.18-.47 0-.65l1.35-1.32c.18-.18.48-.18.66 0l4.32 4.22c.04.04.12.04.16 0l4.32-4.22c.18-.18.48-.18.66 0l4.32 4.22c.04.04.12.04.16 0l4.32-4.22c.18-.18.48-.18.66 0z"/>
-              </svg>
-            </div>
-          </div>
-          <div class="wc-actions-row">
-            <button class="wc-action-btn" id="btnCopyWcUri">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-              <span id="copyWcText">Copy Code</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="wc-wallet-chips">
-          <span class="wc-chips-title">Connects with 300+ Wallets</span>
-          <div class="wc-supported-icons">
-            <span class="wc-pill">MetaMask</span>
-            <span class="wc-pill">Trust Wallet</span>
-            <span class="wc-pill">Rainbow</span>
-            <span class="wc-pill">OKX</span>
-            <span class="wc-pill">Binance</span>
-            <span class="wc-pill">Coinbase</span>
-            <span class="wc-pill">Ledger</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Network Selection Modal -->
   <div class="modal-backdrop hidden" id="networkModal">
     <div class="modal-box">
@@ -447,6 +371,13 @@
           <div class="net-opt-info">
             <strong>Ethereum Mainnet</strong>
             <small>Chain ID: 1 · Proof-of-Stake</small>
+          </div>
+        </button>
+        <button class="net-opt" data-chain-id="8453">
+          <img src="assets/base.png" width="28" height="28" alt="Base">
+          <div class="net-opt-info">
+            <strong>Base Mainnet</strong>
+            <small>Coinbase L2 · Chain ID: 8453</small>
           </div>
         </button>
         <button class="net-opt" data-chain-id="57073">
@@ -478,12 +409,12 @@
   <footer class="site-footer">
     <div class="footer-container">
       <div class="footer-left">
-        <span class="brand-sub">AllBridge Protocol</span>
+        <span class="brand-sub">OmniRoute Hub</span>
         <p>A non-custodial decentralized cross-chain bridge aggregator.</p>
       </div>
       <div class="footer-right">
         <div class="footer-links">
-          <a href="https://github.com/oneway8/all-bridge-" target="_blank">GitHub</a>
+          <a href="https://github.com/oneway8/all-bridge-" target="_blank" rel="noopener noreferrer">GitHub</a>
           <a href="#">Docs</a>
           <a href="#">Terms</a>
           <a href="#">Privacy</a>
@@ -497,6 +428,6 @@
     <div class="toast-message" id="toastMessage">Transaction submitted</div>
   </div>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
