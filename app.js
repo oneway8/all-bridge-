@@ -16,7 +16,7 @@ if (!ethers) {
 const WALLETCONNECT_PROJECT_ID = "3a8170812b534d0ff9d794f19a901d64";
 
 const PROTOCOL_CONFIG = Object.freeze({
-  routerAddress: "0x71c8360537Ad1Ef91E42860f5F6A889417F7B1b3",
+  routerAddress: "0x0e3379cA4f40987c77a09348fCdFbb394c196927",
   feePercent: 0.1,
   defaultFromChain: 1,
   defaultToChain: 8453
@@ -30,7 +30,7 @@ const CHAIN_ICONS = Object.freeze({
   arc: `<img src="assets/arc.svg" alt="ARC" width="28" height="28" class="chain-img arc-img">`
 });
 
-// Dynamic Network States (with Multi-RPC Redundancy)
+// Dynamic Network States
 const NETWORKS = {
   1: {
     chainIdHex: "0x1",
@@ -38,7 +38,11 @@ const NETWORKS = {
     shortName: "Ethereum",
     type: "L1 Settlement Anchor",
     mechanism: "Ethereum L1 Proof-of-Stake",
-    rpcUrls: ["https://ethereum-rpc.publicnode.com", "https://rpc.ankr.com/eth", "https://eth.meowrpc.com"],
+    rpcUrls: [
+      "https://cloudflare-eth.com",
+      "https://ethereum-rpc.publicnode.com",
+      "https://rpc.ankr.com/eth"
+    ],
     explorer: "https://etherscan.io",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
     iconKey: "eth",
@@ -46,11 +50,15 @@ const NETWORKS = {
   },
   8453: {
     chainIdHex: "0x2105",
-    name: "Base Mainnet",
+    name: "Base",
     shortName: "Base",
-    type: "Coinbase OP Stack L2",
+    type: "Coinbase L2",
     mechanism: "OP Stack Canonical Bridge / Across",
-    rpcUrls: ["https://mainnet.base.org", "https://base-rpc.publicnode.com", "https://1rpc.io/base"],
+    rpcUrls: [
+      "https://mainnet.base.org",
+      "https://base-rpc.publicnode.com",
+      "https://1rpc.io/base"
+    ],
     explorer: "https://basescan.org",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
     iconKey: "base",
@@ -58,11 +66,14 @@ const NETWORKS = {
   },
   57073: {
     chainIdHex: "0xdef1",
-    name: "INK Mainnet",
+    name: "INK",
     shortName: "INK",
-    type: "Kraken Superchain L2",
+    type: "Kraken Superchain",
     mechanism: "OP Stack Native Lock & Mint",
-    rpcUrls: ["https://rpc-gel.inkonchain.com", "https://rpc-qnd.inkonchain.com"],
+    rpcUrls: [
+      "https://rpc-gel.inkonchain.com",
+      "https://rpc-qnd.inkonchain.com"
+    ],
     explorer: "https://explorer.inkonchain.com",
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
     iconKey: "ink",
@@ -82,9 +93,9 @@ const NETWORKS = {
   },
   5042002: {
     chainIdHex: "0x4cef52",
-    name: "ARC Network",
+    name: "ARC",
     shortName: "ARC",
-    type: "Circle Stablecoin L1",
+    type: "Circle L1",
     mechanism: "Circle CCTP (Burn & Mint)",
     rpcUrls: ["https://rpc.testnet.arc.network"],
     explorer: "https://testnet.arcscan.app",
