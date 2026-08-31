@@ -198,6 +198,19 @@
           </svg>
           <span>Non-custodial smart contracts. Audited by OpenZeppelin.</span>
         </div>
+
+        <!-- ⚠️ SAFETY & PRE-USAGE WARNING NOTICE -->
+        <div class="disclaimer-banner" style="margin-top: 20px; padding: 14px 16px; background: rgba(245, 158, 11, 0.07); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; font-size: 12px; color: #cbd5e1; line-height: 1.6; text-align: left;">
+          <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #fbbf24; margin-bottom: 8px; font-size: 13px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            <span>⚠️ 이용 전 필독 주의사항 (Safety & Security Notice)</span>
+          </div>
+          <ul style="margin: 0; padding-left: 18px; color: #94a3b8; display: flex; flex-direction: column; gap: 4px;">
+            <li><strong style="color: #f1f5f9;">소액 사전 테스트 필수</strong>: 대규모 자산 전송 전, 반드시 소액으로 목적지 체인 정상 수신 여부를 먼저 테스트해 주세요.</li>
+            <li><strong style="color: #fbbf24;">GIWA 네트워크</strong>: 현재 시스템 <strong>업데이트 작업 진행 중</strong>으로 정산이 지연될 수 있습니다.</li>
+            <li><strong style="color: #f1f5f9;">트랜잭션 비가역성</strong>: 블록체인 특성상 지갑에서 한 번 승인된 트랜잭션은 취소 및 되돌리기가 불가능합니다.</li>
+          </ul>
+        </div>
       </div>
     </section>
 
@@ -267,27 +280,27 @@
                 <td>
                   <div class="table-chain-cell">
                     <img src="assets/giwa.svg" width="22" height="22" alt="GIWA" class="giwa-img">
-                    <strong>GIWA Rollup</strong>
+                    <strong>GIWA</strong>
                   </div>
                 </td>
                 <td>Dunamu L2</td>
                 <td>ETH</td>
-                <td>~3 sec</td>
-                <td><span class="status-pill green">Operational</span></td>
+                <td>-</td>
+                <td><span class="status-pill yellow" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">업데이트 중 (Updating)</span></td>
                 <td><a href="https://sepolia-explorer.giwa.io" target="_blank" class="link-mono">giwa.io ↗</a></td>
               </tr>
               <tr>
                 <td>
                   <div class="table-chain-cell">
                     <img src="assets/arc.svg" width="22" height="22" alt="ARC" class="arc-img">
-                    <strong>ARC Network</strong>
+                    <strong>ARC</strong>
                   </div>
                 </td>
-                <td>Circle L1 (CCTP)</td>
+                <td>Circle L1</td>
                 <td>USDC</td>
-                <td>~5 sec</td>
+                <td>~1 sec</td>
                 <td><span class="status-pill green">Operational</span></td>
-                <td><a href="https://testnet.arcscan.app" target="_blank" class="link-mono">arcscan.app ↗</a></td>
+                <td><a href="https://arc-scan.org" target="_blank" class="link-mono">arc-scan.org ↗</a></td>
               </tr>
             </tbody>
           </table>
@@ -298,27 +311,29 @@
     <!-- 3. ACTIVITY TAB -->
     <section id="tab-history" class="tab-pane">
       <div class="content-card-wide">
-        <div class="panel-header">
+        <div class="card-header-flex">
           <div>
-            <h3>Recent Transactions</h3>
-            <p>On-chain verifiable execution log for this session.</p>
+            <h3>Activity Ledger</h3>
+            <p>Immutable record of cross-chain liquidity and settlement dispatches.</p>
           </div>
-          <button class="ghost-btn" id="btnClearHistory">Clear Activity</button>
+          <button id="btnRefreshHistory" class="btn-secondary btn-sm" aria-label="Refresh Transaction History">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Refresh
+          </button>
         </div>
-
-        <div class="routes-table-container">
-          <table class="clean-table">
+        <div class="table-responsive">
+          <table class="data-table" id="historyTable">
             <thead>
               <tr>
-                <th>Time</th>
-                <th>Route</th>
-                <th>Amount</th>
-                <th>Fee</th>
-                <th>Status</th>
-                <th>Tx Hash</th>
+                <th>Timestamp</th>
+                <th>Route Path</th>
+                <th>Source Amount</th>
+                <th>Protocol Fee</th>
+                <th>Settlement Status</th>
+                <th>On-Chain Explorer</th>
               </tr>
             </thead>
-            <tbody id="globalHistoryBody">
+            <tbody id="historyTableBody">
               <!-- Dynamically populated -->
             </tbody>
           </table>
@@ -369,36 +384,36 @@
         <button class="net-opt" data-chain-id="1">
           <img src="assets/ethereum.png" width="28" height="28" alt="Ethereum">
           <div class="net-opt-info">
-            <strong>Ethereum Mainnet</strong>
-            <small>Chain ID: 1 · Proof-of-Stake</small>
+            <strong>Ethereum</strong>
+            <small>Chain ID: 1 · L1 Anchor</small>
           </div>
         </button>
         <button class="net-opt" data-chain-id="8453">
           <img src="assets/base.png" width="28" height="28" alt="Base">
           <div class="net-opt-info">
-            <strong>Base Mainnet</strong>
+            <strong>Base</strong>
             <small>Coinbase L2 · Chain ID: 8453</small>
           </div>
         </button>
         <button class="net-opt" data-chain-id="57073">
           <img src="assets/ink.png" width="28" height="28" alt="INK">
           <div class="net-opt-info">
-            <strong>INK Mainnet</strong>
-            <small>Kraken L2 · Chain ID: 57073</small>
+            <strong>INK</strong>
+            <small>Kraken Superchain · Chain ID: 57073</small>
           </div>
         </button>
         <button class="net-opt" data-chain-id="91342">
           <img src="assets/giwa.svg" width="28" height="28" alt="GIWA" class="giwa-img">
           <div class="net-opt-info">
             <strong>GIWA</strong>
-            <small>Dunamu Rollup · Chain ID: 91342</small>
+            <small style="color: #f59e0b; font-weight: 600;">Dunamu L2 · 업데이트 중 (Updating)</small>
           </div>
         </button>
-        <button class="net-opt" data-chain-id="5042002">
+        <button class="net-opt" data-chain-id="5042">
           <img src="assets/arc.svg" width="28" height="28" alt="ARC" class="arc-img">
           <div class="net-opt-info">
-            <strong>ARC Network</strong>
-            <small>Circle Stablecoin L1 · Chain ID: 5042002</small>
+            <strong>ARC</strong>
+            <small>Circle L1 · Chain ID: 5042</small>
           </div>
         </button>
       </div>
@@ -411,6 +426,7 @@
       <div class="footer-left">
         <span class="brand-sub">OmniRoute Hub</span>
         <p>A non-custodial decentralized cross-chain bridge aggregator.</p>
+        <p style="font-size: 11px; color: #64748b; margin-top: 6px;">⚠️ Notice: Cross-chain operations carry intrinsic protocol risks. Test with small sums first. GIWA network is currently under update.</p>
       </div>
       <div class="footer-right">
         <div class="footer-links">

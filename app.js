@@ -91,28 +91,28 @@ const NETWORKS = {
     iconKey: "giwa",
     priceUsd: 2445.00
   },
-  5042002: {
-    chainIdHex: "0x4cef52",
+  5042: {
+    chainIdHex: "0x13b2",
     name: "ARC",
     shortName: "ARC",
     type: "Circle L1",
     mechanism: "Circle CCTP (Burn & Mint)",
-    rpcUrls: ["https://rpc.testnet.arc.network"],
-    explorer: "https://testnet.arcscan.app",
+    rpcUrls: ["https://rpc.arc-scan.org"],
+    explorer: "https://arc-scan.org",
     currency: { name: "USD Coin", symbol: "USDC", decimals: 18 },
     iconKey: "arc",
     priceUsd: 1.00
   }
 };
 
-const SUPPORTED_CHAIN_IDS = [1, 8453, 57073, 91342, 5042002];
+const SUPPORTED_CHAIN_IDS = [1, 8453, 57073, 91342, 5042];
 
 const WALLETCONNECT_RPC_MAP = Object.freeze({
-  1: "https://ethereum-rpc.publicnode.com",
+  1: "https://cloudflare-eth.com",
   8453: "https://mainnet.base.org",
   57073: "https://rpc-gel.inkonchain.com",
   91342: "https://sepolia-rpc.giwa.io",
-  5042002: "https://rpc.testnet.arc.network"
+  5042: "https://rpc.arc-scan.org"
 });
 
 // -----------------------------------------------------------------------------
@@ -874,6 +874,7 @@ function isSafeExplorerUrl(value) {
         "basescan.org",
         "explorer.inkonchain.com",
         "sepolia-explorer.giwa.io",
+        "arc-scan.org",
         "testnet.arcscan.app"
       ].includes(url.hostname);
   } catch {

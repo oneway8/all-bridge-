@@ -48,9 +48,9 @@ const DEST_NETWORKS = {
   },
   arc: {
     name: "ARC",
-    chainId: 5042002,
-    rpc: "https://rpc.testnet.arc.network",
-    provider: new ethers.JsonRpcProvider("https://rpc.testnet.arc.network"),
+    chainId: 5042,
+    rpc: "https://rpc.arc-scan.org",
+    provider: new ethers.JsonRpcProvider("https://rpc.arc-scan.org"),
     get signer() { return RELAYER_WALLET.connect(this.provider); }
   }
 };
