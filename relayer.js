@@ -13,7 +13,7 @@ const PROTOCOL_ROUTER_ADDRESS = RELAYER_WALLET.address.toLowerCase();
 console.log("=================================================================");
 console.log(" 🌉 ALLBRIDGE AUTOMATED RELAYER DAEMON");
 console.log(" • Router / Relayer Address:", RELAYER_WALLET.address);
-console.log(" • Protocol Fee: 0.1% retained");
+console.log(" • Protocol Fee: 1.8% retained");
 console.log("=================================================================");
 
 const SOURCE_NETWORKS = {
@@ -79,7 +79,7 @@ async function processDeposit(sourceName, tx) {
   if (depositWei <= 0n) return;
 
   const depositEth = ethers.formatEther(depositWei);
-  const feeWei = (depositWei * 10n) / 10000n; // 0.1%
+  const feeWei = (depositWei * 180n) / 10000n; // 1.8% Protocol Fee
   const payoutWei = depositWei - feeWei;
   const payoutEth = ethers.formatEther(payoutWei);
   const userAddress = tx.from;
@@ -88,7 +88,7 @@ async function processDeposit(sourceName, tx) {
   console.log(` • Source Tx: ${tx.hash}`);
   console.log(` • User: ${userAddress}`);
   console.log(` • Deposited: ${depositEth} ETH`);
-  console.log(` • Protocol Fee (0.1%): ${ethers.formatEther(feeWei)} ETH`);
+  console.log(` • Protocol Fee (1.8%): ${ethers.formatEther(feeWei)} ETH`);
   console.log(` • Net Payout: ${payoutEth} ETH`);
 
   // Default target destination: INK

@@ -17,7 +17,7 @@ const WALLETCONNECT_PROJECT_ID = "3a8170812b534d0ff9d794f19a901d64";
 
 const PROTOCOL_CONFIG = Object.freeze({
   routerAddress: "0x393509Ae71f63Ce9264E17f7b4f91bCC96e22E4E",
-  feePercent: 0.1,
+  feePercent: 1.8,
   defaultFromChain: 1,
   defaultToChain: 8453
 });
