@@ -590,7 +590,14 @@ async function handleBridgeExecution() {
       btnExecute.innerHTML = "<span>Confirming in Wallet...</span>";
     }
 
-    // 2. Obtain Web3 Signer & Execute Real Transaction
+    // 2. Ensure wallet is switched to selected source network (e.g. Base Mainnet)
+    const actualChainId = await getWalletChainId(walletConnectProvider);
+    if (actualChainId !== appState.fromChain) {
+      showToast(`Switching wallet to ${fromNet.name}...`);
+      await switchNetwork(appState.fromChain);
+    }
+
+    // 3. Obtain Web3 Signer on the active network & Execute Real Transaction
     const provider = new ethers.providers.Web3Provider(walletConnectProvider, "any");
     const signer = provider.getSigner();
 
