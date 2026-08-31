@@ -613,9 +613,12 @@ async function handleBridgeExecution() {
       if (sendErr.code === 4001 || sendErr.message?.includes("rejected") || sendErr.message?.includes("denied")) {
         showToast("Transaction cancelled in wallet");
         return;
+      } else if (sendErr.code === "INSUFFICIENT_FUNDS" || sendErr.message?.includes("insufficient funds")) {
+        showToast(`Insufficient ${fromNet.currency.symbol} balance for transfer + gas`);
+        return;
       } else {
-        // Fallback for simulation / mock execution if wallet rejects custom RPC
-        txHash = "0x" + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+        showToast(sendErr.reason || sendErr.message || "Transaction failed");
+        return;
       }
     }
 
