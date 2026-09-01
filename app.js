@@ -382,6 +382,18 @@ let walletConnectInitPromise = null;
 let connectInFlight = null;
 let isBridging = false;
 
+const getInitialLanguage = () => {
+  try {
+    const saved = localStorage.getItem("allbridge_lang");
+    if (saved && ["en", "ja", "zh", "ko"].includes(saved)) return saved;
+    const browserLang = (navigator.language || navigator.userLanguage || "en").toLowerCase();
+    if (browserLang.startsWith("ko")) return "ko";
+    if (browserLang.startsWith("ja")) return "ja";
+    if (browserLang.startsWith("zh")) return "zh";
+  } catch (_) {}
+  return "en";
+};
+
 const appState = {
   currentChainId: 1,
   userAddress: null,
@@ -392,7 +404,7 @@ const appState = {
   selectingTarget: null,
   cachedBalances: {},
   bridgeHistory: loadHistory(),
-  language: localStorage.getItem("allbridge_lang") || "en"
+  language: getInitialLanguage()
 };
 
 function loadHistory() {
