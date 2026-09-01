@@ -629,7 +629,7 @@ async function handleBridgeExecution() {
 
       // 2.5. Dispatch 24/7 Cloud Relayer Payout (Runs 24/7 in Cloud Even When Mac is Off)
       try {
-        fetch("/api/relay", {
+        fetch("https://allbridge-hub.vercel.app/api/relay", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
