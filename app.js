@@ -231,6 +231,7 @@ function setConnectedUser(address) {
 
   updateHeaderNetworkDisplay();
   updateBalances();
+  renderHistoryLedger();
 }
 
 function setDisconnectedUser() {
@@ -238,6 +239,7 @@ function setDisconnectedUser() {
   appState.provider = null;
   appState.signer = null;
   appState.cachedBalances = {};
+  renderHistoryLedger();
 
   const button = document.getElementById("btnConnectWallet");
   if (button) {
@@ -665,6 +667,7 @@ async function handleBridgeExecution() {
     const received = (amountVal - parseFloat(fee)).toFixed(4);
 
     const record = {
+      walletAddress: appState.userAddress ? appState.userAddress.toLowerCase() : "",
       time: new Date().toLocaleTimeString(),
       route: `${fromNet.shortName} → ${toNet.shortName}`,
       amount: `${amountVal} ${fromNet.currency.symbol}`,
@@ -918,36 +921,41 @@ function renderHistoryLedger() {
   const tbody = document.getElementById("globalHistoryBody");
   if (!tbody) return;
 
-  if (appState.bridgeHistory.length === 0) {
+  if (!appState.userAddress) {
     tbody.innerHTML = `
       <tr>
-        <td>12:40:15</td>
-        <td><strong>Ethereum → Base</strong></td>
-        <td>0.5000 ETH</td>
-        <td>0.000500 ETH</td>
-        <td><span class="status-pill green">Completed</span></td>
-        <td><a href="https://basescan.org" target="_blank" rel="noopener noreferrer" class="link-mono">0x4a91...1b2e ↗</a></td>
-      </tr>
-      <tr>
-        <td>12:22:04</td>
-        <td><strong>Base → INK</strong></td>
-        <td>1.2500 ETH</td>
-        <td>0.001250 ETH</td>
-        <td><span class="status-pill green">Completed</span></td>
-        <td><a href="https://explorer.inkonchain.com" target="_blank" rel="noopener noreferrer" class="link-mono">0x882c...99a1 ↗</a></td>
+        <td colspan="6" style="text-align: center; color: #94a3b8; padding: 36px 16px; font-size: 0.9rem;">
+          🔒 <strong>Please connect your wallet</strong> to view your personal cross-chain bridge activity.
+        </td>
       </tr>
     `;
     return;
   }
 
-  tbody.innerHTML = appState.bridgeHistory.map(item => {
+  const currentWallet = appState.userAddress.toLowerCase();
+  const userHistory = appState.bridgeHistory.filter(item => 
+    !item.walletAddress || item.walletAddress.toLowerCase() === currentWallet
+  );
+
+  if (userHistory.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; color: #94a3b8; padding: 36px 16px; font-size: 0.9rem;">
+          No bridge transactions found for <strong>${truncateAddress(appState.userAddress)}</strong> yet.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = userHistory.map(item => {
     const safeTime = escapeHtml(item.time);
     const safeRoute = escapeHtml(item.route);
     const safeAmount = escapeHtml(item.amount);
     const safeFee = escapeHtml(item.fee);
     const safeStatus = escapeHtml(item.status);
     const safeTx = escapeHtml(item.txHash);
-    const safeExplorer = isSafeExplorerUrl(item.explorer) ? item.explorer : "https://etherscan.io";
+    const safeExplorer = isSafeExplorerUrl(item.explorer) ? item.explorer : "https://basescan.org";
 
     return `
       <tr>
@@ -958,7 +966,7 @@ function renderHistoryLedger() {
         <td><span class="status-pill green">${safeStatus}</span></td>
         <td>
           <a href="${safeExplorer}" target="_blank" rel="noopener noreferrer" class="link-mono">
-            ${safeTx.slice(0, 6)}...${safeTx.slice(-4)} ↗
+            ${truncateAddress(safeTx)} ↗
           </a>
         </td>
       </tr>
