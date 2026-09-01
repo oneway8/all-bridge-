@@ -116,6 +116,224 @@ const WALLETCONNECT_RPC_MAP = Object.freeze({
 });
 
 // -----------------------------------------------------------------------------
+// Internationalization (i18n) Translations (EN · JA · ZH · KO)
+// -----------------------------------------------------------------------------
+const I18N_TRANSLATIONS = {
+  en: {
+    navBridge: "Bridge",
+    navRoutes: "Routes",
+    navActivity: "Activity",
+    connectWallet: "WalletConnect",
+    connecting: "Connecting...",
+    tabBridge: "Bridge",
+    tabSwap: "Swap",
+    payFrom: "Pay from",
+    balance: "Balance:",
+    receiveOn: "Receive on",
+    estArrival: "Est. Arrival:",
+    arrivalSpeed: "~5 seconds",
+    route: "Route",
+    routeMechanism: "Across Protocol Router",
+    networkGas: "Network Gas",
+    bridgeFee: "Bridge Protocol Fee (1.8%)",
+    minReceived: "Minimum Received",
+    btnBridge: "Bridge Assets",
+    btnBroadcasting: "Broadcasting to Network...",
+    securityNote: "Non-custodial smart contracts. Audited by OpenZeppelin.",
+    safetyNoticeTitle: "⚠️ Safety & Security Notice (Read Before Use)",
+    safetyPoint1: '<strong style="color: #f1f5f9;">Test Small Amounts First</strong>: Always execute a test transaction with a small amount before transferring larger sums.',
+    safetyPoint2: '<strong style="color: #fbbf24;">GIWA Network</strong>: Currently undergoing scheduled network maintenance and upgrades.',
+    safetyPoint3: '<strong style="color: #f1f5f9;">Transaction Finality</strong>: On-chain transactions are immutable and cannot be cancelled or reversed once signed.',
+    routesTitle: "Supported Networks & Liquidity Routes",
+    routesSubtitle: "Live canonical cross-chain status and rollup settlement confirmation times.",
+    thNetwork: "Network",
+    thType: "Type / Stack",
+    thNative: "Native Asset",
+    thSpeed: "Average Speed",
+    thSettlement: "Settlement",
+    thExplorer: "Explorer",
+    statusOperational: "Operational",
+    statusMaintenance: "Under Maintenance",
+    activityTitle: "Activity Ledger",
+    activitySubtitle: "Immutable record of cross-chain liquidity and settlement dispatches.",
+    btnClearActivity: "Clear Activity",
+    thTime: "Time",
+    thRoute: "Route",
+    thAmount: "Amount",
+    thFee: "Fee (1.8%)",
+    thStatus: "Status",
+    thTxExplorer: "On-Chain Explorer",
+    connectPrompt: "🔒 <strong>Please connect your wallet</strong> to view your personal cross-chain bridge activity.",
+    noTxPrompt: "No bridge transactions found for <strong>{address}</strong> yet.",
+    selectNetwork: "Select Network",
+    footerDesc: "A non-custodial decentralized cross-chain bridge aggregator.",
+    footerNotice: "⚠️ Notice: Cross-chain operations carry intrinsic protocol risks. Test with small sums first. GIWA network is currently under update.",
+    footerDocs: "Docs",
+    footerTerms: "Terms",
+    footerPrivacy: "Privacy"
+  },
+  ja: {
+    navBridge: "ブリッジ",
+    navRoutes: "ルート一覧",
+    navActivity: "アクティビティ",
+    connectWallet: "ウォレット接続",
+    connecting: "接続中...",
+    tabBridge: "ブリッジ",
+    tabSwap: "スワップ",
+    payFrom: "支払元",
+    balance: "残高:",
+    receiveOn: "受取先",
+    estArrival: "予想着金時間:",
+    arrivalSpeed: "約5秒",
+    route: "ルート",
+    routeMechanism: "Acrossプロトコルルーター",
+    networkGas: "ネットワークガス代",
+    bridgeFee: "プロトコル手数料 (1.8%)",
+    minReceived: "最低受取数量",
+    btnBridge: "ブリッジを実行",
+    btnBroadcasting: "ネットワークに送信中...",
+    securityNote: "ノンカストディアル型スマートコントラクト。OpenZeppelin監査済み。",
+    safetyNoticeTitle: "⚠️ ご利用前の安全上の注意事項",
+    safetyPoint1: '<strong style="color: #f1f5f9;">少額テストの推奨</strong>: 大口送金の前に、必ず少額でのテスト送金を行ってください。',
+    safetyPoint2: '<strong style="color: #fbbf24;">GIWAネットワーク</strong>: 現在定期メンテナンスおよびアップグレード作業中です。',
+    safetyPoint3: '<strong style="color: #f1f5f9;">取引の不可逆性</strong>: 署名完了後のオンチェーントランザクションはキャンセル・取り消しができません。',
+    routesTitle: "対応ネットワーク & 流動性ルート",
+    routesSubtitle: "各ブロックチェーンのリアルタイム稼働状況および決済確定時間。",
+    thNetwork: "ネットワーク",
+    thType: "タイプ / 技術スタック",
+    thNative: "ネイティブ通貨",
+    thSpeed: "平均速度",
+    thSettlement: "稼働状況",
+    thExplorer: "エクスプローラー",
+    statusOperational: "正常稼働中",
+    statusMaintenance: "メンテナンス中",
+    activityTitle: "アクティビティ台帳",
+    activitySubtitle: "クロスチェーン流動性および決済トランザクションの改ざん不能な記録。",
+    btnClearActivity: "履歴をクリア",
+    thTime: "時間",
+    thRoute: "ルート",
+    thAmount: "数量",
+    thFee: "手数料 (1.8%)",
+    thStatus: "状態",
+    thTxExplorer: "オンチェーン確認",
+    connectPrompt: "🔒 個人のブリッジ履歴を確認するには<strong>ウォレットを接続</strong>してください。",
+    noTxPrompt: "<strong>{address}</strong> のブリッジ取引履歴はまだありません。",
+    selectNetwork: "ネットワークを選択",
+    footerDesc: "ノンカストディアル型の分散型クロスチェーンブリッジアグリゲーター。",
+    footerNotice: "⚠️ 注意: クロスチェーン取引には固有のリスクが存在します。まずは少額からお試しください。GIWAは現在アップデート作業中です。",
+    footerDocs: "ドキュメント",
+    footerTerms: "利用規約",
+    footerPrivacy: "プライバシー"
+  },
+  zh: {
+    navBridge: "跨链桥",
+    navRoutes: "支持路线",
+    navActivity: "活动记录",
+    connectWallet: "连接钱包",
+    connecting: "连接中...",
+    tabBridge: "跨链桥",
+    tabSwap: "兑换",
+    payFrom: "支付网络",
+    balance: "余额:",
+    receiveOn: "接收网络",
+    estArrival: "预计到达时间:",
+    arrivalSpeed: "~5 秒",
+    route: "跨链路线",
+    routeMechanism: "Across 协议路由",
+    networkGas: "网络 Gas 费",
+    bridgeFee: "协议服务费 (1.8%)",
+    minReceived: "最低到账数量",
+    btnBridge: "立即跨链",
+    btnBroadcasting: "正在广播至区块链...",
+    securityNote: "非托管智能合约，已通过 OpenZeppelin 安全审计。",
+    safetyNoticeTitle: "⚠️ 使用前安全须知",
+    safetyPoint1: '<strong style="color: #f1f5f9;">请务必先进行小额测试</strong>: 在进行大额资产转移之前，请先用小额资金测试目标链是否正常到账。',
+    safetyPoint2: '<strong style="color: #fbbf24;">GIWA 网络</strong>: 当前正在进行系统升级与维护。',
+    safetyPoint3: '<strong style="color: #f1f5f9;">交易不可逆</strong>: 链上交易一经在钱包中签名确认，将无法取消或撤回。',
+    routesTitle: "支持的网络与流动性路线",
+    routesSubtitle: "实时跨链网络状态及各 Rollup 结算确认速度。",
+    thNetwork: "网络",
+    thType: "类型 / 架构",
+    thNative: "原生代币",
+    thSpeed: "平均速度",
+    thSettlement: "运行状态",
+    thExplorer: "区块浏览器",
+    statusOperational: "正常运行",
+    statusMaintenance: "维护中",
+    activityTitle: "链上活动账本",
+    activitySubtitle: "跨链流动性与结算发送的不可篡改记录。",
+    btnClearActivity: "清空记录",
+    thTime: "时间",
+    thRoute: "路线",
+    thAmount: "金额",
+    thFee: "手续费 (1.8%)",
+    thStatus: "状态",
+    thTxExplorer: "区块浏览器",
+    connectPrompt: "🔒 <strong>请连接您的钱包</strong> 以查看您的个人跨链交易记录。",
+    noTxPrompt: "暂未查询到 <strong>{address}</strong> 的跨链交易记录。",
+    selectNetwork: "选择网络",
+    footerDesc: "非托管去中心化跨链桥聚合协议。",
+    footerNotice: "⚠️ 风险提示: 跨链操作具有底层协议风险。请务必先使用小额测试。GIWA 网络当前正在升级维护中。",
+    footerDocs: "技术文档",
+    footerTerms: "服务条款",
+    footerPrivacy: "隐私政策"
+  },
+  ko: {
+    navBridge: "브릿지",
+    navRoutes: "지원 경로",
+    navActivity: "활동 내역",
+    connectWallet: "지갑 연결",
+    connecting: "연결 중...",
+    tabBridge: "브릿지",
+    tabSwap: "스왑",
+    payFrom: "출발 체인",
+    balance: "잔액:",
+    receiveOn: "도착 체인",
+    estArrival: "예상 소요 시간:",
+    arrivalSpeed: "~5초",
+    route: "라우팅 경로",
+    routeMechanism: "Across 프로토콜 라우터",
+    networkGas: "네트워크 가스비",
+    bridgeFee: "프로토콜 수수료 (1.8%)",
+    minReceived: "최소 수령 수량",
+    btnBridge: "브릿지 실행",
+    btnBroadcasting: "네트워크로 전송 중...",
+    securityNote: "논커스터디얼 스마트 컨트랙트. OpenZeppelin 보안 감사 완료.",
+    safetyNoticeTitle: "⚠️ 이용 전 필독 주의사항",
+    safetyPoint1: '<strong style="color: #f1f5f9;">소액 사전 테스트 권장</strong>: 대규모 자산 전송 전, 반드시 소액으로 목적지 체인 정상 수신 여부를 먼저 테스트해 주세요.',
+    safetyPoint2: '<strong style="color: #fbbf24;">GIWA 네트워크</strong>: 현재 정기 점검 및 시스템 업데이트 작업이 진행 중입니다.',
+    safetyPoint3: '<strong style="color: #f1f5f9;">트랜잭션 비가역성</strong>: 온체인 트랜잭션은 지갑에서 서명 완료 후 취소나 되돌리기가 불가능합니다.',
+    routesTitle: "지원 네트워크 & 유동성 라우트",
+    routesSubtitle: "실시간 공식 크로스체인 상태 및 롤업 정산 확정 시간.",
+    thNetwork: "네트워크",
+    thType: "구분 / 스택",
+    thNative: "기본 자산",
+    thSpeed: "평균 속도",
+    thSettlement: "가동 상태",
+    thExplorer: "익스플로러",
+    statusOperational: "정상 가동",
+    statusMaintenance: "점검 중",
+    activityTitle: "활동 내역 원장",
+    activitySubtitle: "크로스체인 유동성 정산 및 전송 내역의 위변조 불가능한 온체인 기록.",
+    btnClearActivity: "내역 지우기",
+    thTime: "시간",
+    thRoute: "경로",
+    thAmount: "수량",
+    thFee: "수수료 (1.8%)",
+    thStatus: "상태",
+    thTxExplorer: "온체인 조회",
+    connectPrompt: "🔒 개인 브릿지 활동 내역을 확인하려면 <strong>지갑을 연결</strong>해 주세요.",
+    noTxPrompt: "<strong>{address}</strong> 지갑의 브릿지 거래 내역이 아직 없습니다.",
+    selectNetwork: "네트워크 선택",
+    footerDesc: "비수탁형(Non-Custodial) 탈중앙화 크로스체인 브릿지 애그리게이터.",
+    footerNotice: "⚠️ 주의: 크로스체인 전송에는 프로토콜 위험이 수반됩니다. 반드시 소액으로 먼저 테스트하세요. GIWA 네트워크는 현재 업데이트 중입니다.",
+    footerDocs: "문서",
+    footerTerms: "이용약관",
+    footerPrivacy: "개인정보보호"
+  }
+};
+
+// -----------------------------------------------------------------------------
 // Live Market Price Oracle
 // -----------------------------------------------------------------------------
 async function fetchLivePrices() {
@@ -173,7 +391,8 @@ const appState = {
   toChain: 8453,
   selectingTarget: null,
   cachedBalances: {},
-  bridgeHistory: loadHistory()
+  bridgeHistory: loadHistory(),
+  language: localStorage.getItem("allbridge_lang") || "en"
 };
 
 function loadHistory() {
@@ -921,11 +1140,13 @@ function renderHistoryLedger() {
   const tbody = document.getElementById("globalHistoryBody");
   if (!tbody) return;
 
+  const dict = I18N_TRANSLATIONS[appState.language] || I18N_TRANSLATIONS.en;
+
   if (!appState.userAddress) {
     tbody.innerHTML = `
       <tr>
         <td colspan="6" style="text-align: center; color: #94a3b8; padding: 36px 16px; font-size: 0.9rem;">
-          🔒 <strong>Please connect your wallet</strong> to view your personal cross-chain bridge activity.
+          ${dict.connectPrompt}
         </td>
       </tr>
     `;
@@ -938,10 +1159,11 @@ function renderHistoryLedger() {
   );
 
   if (userHistory.length === 0) {
+    const noTxMsg = dict.noTxPrompt.replace("{address}", truncateAddress(appState.userAddress));
     tbody.innerHTML = `
       <tr>
         <td colspan="6" style="text-align: center; color: #94a3b8; padding: 36px 16px; font-size: 0.9rem;">
-          No bridge transactions found for <strong>${truncateAddress(appState.userAddress)}</strong> yet.
+          ${noTxMsg}
         </td>
       </tr>
     `;
@@ -974,6 +1196,73 @@ function renderHistoryLedger() {
   }).join("");
 }
 
+// -----------------------------------------------------------------------------
+// Language (i18n) Controller
+// -----------------------------------------------------------------------------
+function setLanguage(lang) {
+  if (!I18N_TRANSLATIONS[lang]) lang = "en";
+  appState.language = lang;
+  try {
+    localStorage.setItem("allbridge_lang", lang);
+  } catch (_) {}
+
+  const langLabels = { en: "EN", ja: "JA", zh: "ZH", ko: "KO" };
+  const currentLabelEl = document.getElementById("currentLangLabel");
+  if (currentLabelEl) {
+    currentLabelEl.textContent = langLabels[lang] || "EN";
+  }
+
+  const dict = I18N_TRANSLATIONS[lang];
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (dict[key]) {
+      el.innerHTML = dict[key];
+    }
+  });
+
+  document.querySelectorAll(".lang-opt").forEach(btn => {
+    if (btn.getAttribute("data-lang") === lang) {
+      btn.classList.add("active");
+    } else {
+      btn.classList.remove("active");
+    }
+  });
+
+  const btnExecute = document.getElementById("btnExecuteBridge");
+  if (btnExecute && !isBridging) {
+    btnExecute.textContent = dict.btnBridge;
+  }
+
+  renderHistoryLedger();
+}
+
+function setupLanguageSelector() {
+  const btn = document.getElementById("btnLangDropdown");
+  const menu = document.getElementById("langMenu");
+  if (!btn || !menu) return;
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    menu.classList.toggle("hidden");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!menu.contains(e.target) && e.target !== btn) {
+      menu.classList.add("hidden");
+    }
+  });
+
+  document.querySelectorAll(".lang-opt").forEach(opt => {
+    opt.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const selectedLang = opt.getAttribute("data-lang");
+      setLanguage(selectedLang);
+      menu.classList.add("hidden");
+      showToast(`Language set to ${selectedLang.toUpperCase()}`);
+    });
+  });
+}
+
 function setupWalletButton() {
   const button = document.getElementById("btnConnectWallet");
   if (!button) return;
@@ -998,11 +1287,13 @@ function setupWalletButton() {
 // -----------------------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", async () => {
   setupNavigation();
+  setupLanguageSelector();
   setupNetworkModal();
   setupBridgeForm();
   setupHistory();
   setupWalletButton();
 
+  setLanguage(appState.language || "en");
   renderHistoryLedger();
   updateBridgeDisplay();
   updateCalculations();

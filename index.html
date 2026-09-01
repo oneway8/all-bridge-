@@ -28,13 +28,30 @@
         </a>
 
         <nav class="nav-links">
-          <a href="#" class="nav-item active" data-tab="bridge">Bridge</a>
-          <a href="#" class="nav-item" data-tab="routes">Routes</a>
-          <a href="#" class="nav-item" data-tab="history">Activity</a>
+          <a href="#" class="nav-item active" data-tab="bridge" data-i18n="navBridge">Bridge</a>
+          <a href="#" class="nav-item" data-tab="routes" data-i18n="navRoutes">Routes</a>
+          <a href="#" class="nav-item" data-tab="history" data-i18n="navActivity">Activity</a>
         </nav>
       </div>
 
       <div class="header-actions">
+        <!-- Language Selector Dropdown -->
+        <div class="lang-dropdown-wrapper">
+          <button class="lang-btn" id="btnLangDropdown" title="Switch Language">
+            <span class="lang-icon">🌐</span>
+            <span id="currentLangLabel">EN</span>
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+              <path d="M3 4.5L6 7.5L9 4.5" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="lang-menu hidden" id="langMenu">
+            <button class="lang-opt active" data-lang="en"><span>🇺🇸</span> English (EN)</button>
+            <button class="lang-opt" data-lang="ja"><span>🇯🇵</span> 日本語 (JA)</button>
+            <button class="lang-opt" data-lang="zh"><span>🇨🇳</span> 简体中文 (ZH)</button>
+            <button class="lang-opt" data-lang="ko"><span>🇰🇷</span> 한국어 (KO)</button>
+          </div>
+        </div>
+
         <!-- Network Dropdown -->
         <button class="network-badge-btn" id="btnOpenNetworkModal">
           <span class="chain-dot" id="currentChainDot"></span>
@@ -49,7 +66,7 @@
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" class="wc-icon">
             <path fill="#3B99FC" d="M5.38 6.44c3.66-3.58 9.58-3.58 13.24 0l.44.43c.18.18.18.47 0 .65l-1.5 1.47c-.09.09-.24.09-.33 0l-.6-.59c-2.58-2.52-6.75-2.52-9.33 0l-.64.63c-.09.09-.24.09-.33 0L4.83 7.56c-.18-.18-.18-.47 0-.65l.55-.47zM21.5 9.77l1.35 1.32c.18.18.18.47 0 .65l-6.1 5.96c-.18.18-.48.18-.66 0l-4.32-4.22c-.04-.04-.12-.04-.16 0l-4.32 4.22c-.18.18-.48.18-.66 0L.58 11.74c-.18-.18-.18-.47 0-.65l1.35-1.32c.18-.18.48-.18.66 0l4.32 4.22c.04.04.12.04.16 0l4.32-4.22c.18-.18.48-.18.66 0l4.32 4.22c.04.04.12.04.16 0l4.32-4.22c.18-.18.48-.18.66 0z"/>
           </svg>
-          <span id="walletBtnText">WalletConnect</span>
+          <span id="walletBtnText" data-i18n="connectWallet">WalletConnect</span>
         </button>
       </div>
     </div>
@@ -65,8 +82,8 @@
         <!-- Card Header -->
         <div class="card-top-bar">
           <div class="tab-pill-group">
-            <button class="pill-btn active">Bridge</button>
-            <button class="pill-btn">Swap</button>
+            <button class="pill-btn active" data-i18n="tabBridge">Bridge</button>
+            <button class="pill-btn" data-i18n="tabSwap">Swap</button>
           </div>
           <div class="card-controls">
             <button class="icon-btn" id="btnSettings" title="Bridge Settings">
@@ -88,9 +105,9 @@
         <!-- SOURCE SECTION -->
         <div class="io-box">
           <div class="io-header">
-            <span class="io-label">Pay from</span>
+            <span class="io-label" data-i18n="payFrom">Pay from</span>
             <div class="io-balance">
-              <span>Balance:</span>
+              <span data-i18n="balance">Balance:</span>
               <strong id="fromChainBalance">0.0000 ETH</strong>
             </div>
           </div>
@@ -135,10 +152,10 @@
         <!-- DESTINATION SECTION -->
         <div class="io-box">
           <div class="io-header">
-            <span class="io-label">Receive on</span>
+            <span class="io-label" data-i18n="receiveOn">Receive on</span>
             <div class="io-balance">
-              <span>Est. Arrival:</span>
-              <span class="arrival-time">~5 seconds</span>
+              <span data-i18n="estArrival">Est. Arrival:</span>
+              <span class="arrival-time" data-i18n="arrivalSpeed">~5 seconds</span>
             </div>
           </div>
           <div class="io-main">
@@ -165,28 +182,28 @@
         <!-- ROUTE DETAILS ACCORDION -->
         <div class="route-summary-panel">
           <div class="summary-line">
-            <span class="summary-label">Route</span>
+            <span class="summary-label" data-i18n="route">Route</span>
             <span class="summary-value route-badge">
               <span class="route-pulse"></span>
-              <span id="routeMechanismText">Across Protocol Router</span>
+              <span id="routeMechanismText" data-i18n="routeMechanism">Across Protocol Router</span>
             </span>
           </div>
           <div class="summary-line">
-            <span class="summary-label">Network Gas</span>
+            <span class="summary-label" data-i18n="networkGas">Network Gas</span>
             <span class="summary-value" id="gasCostText">~$0.42</span>
           </div>
           <div class="summary-row">
-            <span class="summary-label">Bridge Protocol Fee (1.8%)</span>
+            <span class="summary-label" data-i18n="bridgeFee">Bridge Protocol Fee (1.8%)</span>
             <span class="summary-value font-mono" id="bridgeFeeText">0.00018 ETH ($0.44)</span>
           </div>
           <div class="summary-line">
-            <span class="summary-label">Minimum Received</span>
+            <span class="summary-label" data-i18n="minReceived">Minimum Received</span>
             <span class="summary-value font-mono" id="minReceivedText">0.0994 ETH</span>
           </div>
         </div>
 
         <!-- PRIMARY ACTION -->
-        <button class="primary-submit-btn" id="btnExecuteBridge">
+        <button class="primary-submit-btn" id="btnExecuteBridge" data-i18n="btnBridge">
           Bridge Assets
         </button>
 
@@ -195,19 +212,19 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
-          <span>Non-custodial smart contracts. Audited by OpenZeppelin.</span>
+          <span data-i18n="securityNote">Non-custodial smart contracts. Audited by OpenZeppelin.</span>
         </div>
 
         <!-- ⚠️ SAFETY & PRE-USAGE WARNING NOTICE -->
         <div class="disclaimer-banner" style="margin-top: 20px; padding: 14px 16px; background: rgba(245, 158, 11, 0.07); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; font-size: 12px; color: #cbd5e1; line-height: 1.6; text-align: left;">
           <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #fbbf24; margin-bottom: 8px; font-size: 13px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-            <span>⚠️ Safety & Security Notice (Read Before Use)</span>
+            <span data-i18n="safetyNoticeTitle">⚠️ Safety & Security Notice (Read Before Use)</span>
           </div>
           <ul style="margin: 0; padding-left: 18px; color: #94a3b8; display: flex; flex-direction: column; gap: 4px;">
-            <li><strong style="color: #f1f5f9;">Test Small Amounts First</strong>: Always execute a test transaction with a small amount before transferring larger sums.</li>
-            <li><strong style="color: #fbbf24;">GIWA Network</strong>: Currently undergoing scheduled network maintenance and upgrades.</li>
-            <li><strong style="color: #f1f5f9;">Transaction Finality</strong>: On-chain transactions are immutable and cannot be cancelled or reversed once signed.</li>
+            <li data-i18n="safetyPoint1"><strong style="color: #f1f5f9;">Test Small Amounts First</strong>: Always execute a test transaction with a small amount before transferring larger sums.</li>
+            <li data-i18n="safetyPoint2"><strong style="color: #fbbf24;">GIWA Network</strong>: Currently undergoing scheduled network maintenance and upgrades.</li>
+            <li data-i18n="safetyPoint3"><strong style="color: #f1f5f9;">Transaction Finality</strong>: On-chain transactions are immutable and cannot be cancelled or reversed once signed.</li>
           </ul>
         </div>
       </div>
@@ -218,8 +235,8 @@
       <div class="content-card-wide">
         <div class="panel-header">
           <div>
-            <h3>Supported Networks & Liquidity Routes</h3>
-            <p>Live canonical cross-chain status and rollup settlement confirmation times.</p>
+            <h3 data-i18n="routesTitle">Supported Networks & Liquidity Routes</h3>
+            <p data-i18n="routesSubtitle">Live canonical cross-chain status and rollup settlement confirmation times.</p>
           </div>
         </div>
 
@@ -227,12 +244,12 @@
           <table class="clean-table">
             <thead>
               <tr>
-                <th>Network</th>
-                <th>Type / Stack</th>
-                <th>Native Asset</th>
-                <th>Average Speed</th>
-                <th>Settlement</th>
-                <th>Explorer</th>
+                <th data-i18n="thNetwork">Network</th>
+                <th data-i18n="thType">Type / Stack</th>
+                <th data-i18n="thNative">Native Asset</th>
+                <th data-i18n="thSpeed">Average Speed</th>
+                <th data-i18n="thSettlement">Settlement</th>
+                <th data-i18n="thExplorer">Explorer</th>
               </tr>
             </thead>
             <tbody>
@@ -240,39 +257,39 @@
                 <td>
                   <div class="table-chain-cell">
                     <img src="assets/ethereum.png" width="22" height="22" alt="Ethereum">
-                    <strong>Ethereum Mainnet</strong>
+                    <strong>Ethereum</strong>
                   </div>
                 </td>
                 <td>L1 Settlement Anchor</td>
                 <td>ETH</td>
                 <td>~12 sec</td>
-                <td><span class="status-pill green">Operational</span></td>
+                <td><span class="status-pill green" data-i18n="statusOperational">Operational</span></td>
                 <td><a href="https://etherscan.io" target="_blank" rel="noopener noreferrer" class="link-mono">etherscan.io ↗</a></td>
               </tr>
               <tr>
                 <td>
                   <div class="table-chain-cell">
                     <img src="assets/base.png" width="22" height="22" alt="Base">
-                    <strong>Base Mainnet</strong>
+                    <strong>Base</strong>
                   </div>
                 </td>
                 <td>Coinbase OP Stack L2</td>
                 <td>ETH</td>
                 <td>~2 sec</td>
-                <td><span class="status-pill green">Operational</span></td>
+                <td><span class="status-pill green" data-i18n="statusOperational">Operational</span></td>
                 <td><a href="https://basescan.org" target="_blank" rel="noopener noreferrer" class="link-mono">basescan.org ↗</a></td>
               </tr>
               <tr>
                 <td>
                   <div class="table-chain-cell">
                     <img src="assets/ink.png" width="22" height="22" alt="INK">
-                    <strong>INK Mainnet</strong>
+                    <strong>INK</strong>
                   </div>
                 </td>
                 <td>Kraken Superchain (OP)</td>
                 <td>ETH</td>
                 <td>~2 sec</td>
-                <td><span class="status-pill green">Operational</span></td>
+                <td><span class="status-pill green" data-i18n="statusOperational">Operational</span></td>
                 <td><a href="https://explorer.inkonchain.com" target="_blank" rel="noopener noreferrer" class="link-mono">inkonchain.com ↗</a></td>
               </tr>
               <tr>
@@ -285,7 +302,7 @@
                 <td>Dunamu L2</td>
                 <td>ETH</td>
                 <td>-</td>
-                <td><span class="status-pill yellow" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">Under Maintenance</span></td>
+                <td><span class="status-pill yellow" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);" data-i18n="statusMaintenance">Under Maintenance</span></td>
                 <td><a href="https://sepolia-explorer.giwa.io" target="_blank" class="link-mono">giwa.io ↗</a></td>
               </tr>
               <tr>
@@ -298,7 +315,7 @@
                 <td>Circle L1</td>
                 <td>USDC</td>
                 <td>~1 sec</td>
-                <td><span class="status-pill green">Operational</span></td>
+                <td><span class="status-pill green" data-i18n="statusOperational">Operational</span></td>
                 <td><a href="https://arc-scan.org" target="_blank" class="link-mono">arc-scan.org ↗</a></td>
               </tr>
             </tbody>
@@ -312,22 +329,22 @@
       <div class="content-card-wide">
         <div class="panel-header">
           <div>
-            <h3>Activity Ledger</h3>
-            <p>Immutable record of cross-chain liquidity and settlement dispatches.</p>
+            <h3 data-i18n="activityTitle">Activity Ledger</h3>
+            <p data-i18n="activitySubtitle">Immutable record of cross-chain liquidity and settlement dispatches.</p>
           </div>
-          <button class="ghost-btn" id="btnClearHistory">Clear Activity</button>
+          <button class="ghost-btn" id="btnClearHistory" data-i18n="btnClearActivity">Clear Activity</button>
         </div>
 
         <div class="routes-table-container">
           <table class="clean-table">
             <thead>
               <tr>
-                <th>Time</th>
-                <th>Route</th>
-                <th>Amount</th>
-                <th>Fee (1.8%)</th>
-                <th>Status</th>
-                <th>On-Chain Explorer</th>
+                <th data-i18n="thTime">Time</th>
+                <th data-i18n="thRoute">Route</th>
+                <th data-i18n="thAmount">Amount</th>
+                <th data-i18n="thFee">Fee (1.8%)</th>
+                <th data-i18n="thStatus">Status</th>
+                <th data-i18n="thTxExplorer">On-Chain Explorer</th>
               </tr>
             </thead>
             <tbody id="globalHistoryBody">
@@ -344,7 +361,7 @@
   <div class="modal-backdrop hidden" id="networkModal">
     <div class="modal-box">
       <div class="modal-header">
-        <h4>Select Network</h4>
+        <h4 data-i18n="selectNetwork">Select Network</h4>
         <button class="modal-close" id="btnCloseNetworkModal">✕</button>
       </div>
       <div class="network-options-list">
@@ -392,15 +409,15 @@
     <div class="footer-container">
       <div class="footer-left">
         <span class="brand-sub">AllBridge Protocol</span>
-        <p>A non-custodial decentralized cross-chain bridge aggregator.</p>
-        <p style="font-size: 11px; color: #64748b; margin-top: 6px;">⚠️ Notice: Cross-chain operations carry intrinsic protocol risks. Test with small sums first. GIWA network is currently under update.</p>
+        <p data-i18n="footerDesc">A non-custodial decentralized cross-chain bridge aggregator.</p>
+        <p style="font-size: 11px; color: #64748b; margin-top: 6px;" data-i18n="footerNotice">⚠️ Notice: Cross-chain operations carry intrinsic protocol risks. Test with small sums first. GIWA network is currently under update.</p>
       </div>
       <div class="footer-right">
         <div class="footer-links">
           <a href="https://github.com/oneway8/all-bridge-" target="_blank" rel="noopener noreferrer">GitHub</a>
-          <a href="#">Docs</a>
-          <a href="#">Terms</a>
-          <a href="#">Privacy</a>
+          <a href="#" data-i18n="footerDocs">Docs</a>
+          <a href="#" data-i18n="footerTerms">Terms</a>
+          <a href="#" data-i18n="footerPrivacy">Privacy</a>
         </div>
       </div>
     </div>
