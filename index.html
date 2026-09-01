@@ -31,7 +31,6 @@
           <a href="#" class="nav-item active" data-tab="bridge">Bridge</a>
           <a href="#" class="nav-item" data-tab="routes">Routes</a>
           <a href="#" class="nav-item" data-tab="history">Activity</a>
-          <a href="#" class="nav-item" data-tab="analytics">Analytics</a>
         </nav>
       </div>
 
@@ -311,62 +310,30 @@
     <!-- 3. ACTIVITY TAB -->
     <section id="tab-history" class="tab-pane">
       <div class="content-card-wide">
-        <div class="card-header-flex">
+        <div class="panel-header">
           <div>
             <h3>Activity Ledger</h3>
             <p>Immutable record of cross-chain liquidity and settlement dispatches.</p>
           </div>
-          <button id="btnRefreshHistory" class="btn-secondary btn-sm" aria-label="Refresh Transaction History">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-            Refresh
-          </button>
+          <button class="ghost-btn" id="btnClearHistory">Clear Activity</button>
         </div>
-        <div class="table-responsive">
-          <table class="data-table" id="historyTable">
+
+        <div class="routes-table-container">
+          <table class="clean-table">
             <thead>
               <tr>
-                <th>Timestamp</th>
-                <th>Route Path</th>
-                <th>Source Amount</th>
-                <th>Protocol Fee</th>
-                <th>Settlement Status</th>
+                <th>Time</th>
+                <th>Route</th>
+                <th>Amount</th>
+                <th>Fee (1.8%)</th>
+                <th>Status</th>
                 <th>On-Chain Explorer</th>
               </tr>
             </thead>
-            <tbody id="historyTableBody">
+            <tbody id="globalHistoryBody">
               <!-- Dynamically populated -->
             </tbody>
           </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- 4. PROTOCOL ANALYTICS TAB -->
-    <section id="tab-analytics" class="tab-pane">
-      <div class="content-card-wide">
-        <div class="panel-header">
-          <div>
-            <h3>Protocol Performance & Volume</h3>
-            <p>Real-time telemetry and cross-chain routing performance.</p>
-          </div>
-        </div>
-
-        <div class="metrics-row">
-          <div class="stat-card">
-            <span class="stat-label">24h Volume</span>
-            <strong class="stat-value">$1,842,500</strong>
-            <span class="stat-trend positive">+14.2% vs yesterday</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">Total Transactions</span>
-            <strong class="stat-value">18,420</strong>
-            <span class="stat-trend">Average 5.2s execution</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">Supported Routes</span>
-            <strong class="stat-value">20 Pairs</strong>
-            <span class="stat-trend">Zero failed transactions</span>
-          </div>
         </div>
       </div>
     </section>
